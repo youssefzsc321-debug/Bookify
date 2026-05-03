@@ -1,7 +1,15 @@
-﻿
-using Bookify.Web.Core.Models;
+﻿using Bookify.Web.Core.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.CodeAnalysis.Options;
 using Microsoft.EntityFrameworkCore;
+using System;
+using static System.Collections.Specialized.BitVector32;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bookify.Web.Controllers
 {
@@ -23,9 +31,10 @@ namespace Bookify.Web.Controllers
         }
 
         [HttpGet]
+        [AjaxFilter]
         public IActionResult Create()
         {
-            return View("CreateAndEdit");
+            return PartialView("_CreateAndEdit"); 
         }
 
         [HttpPost]
@@ -33,16 +42,16 @@ namespace Bookify.Web.Controllers
         public IActionResult Create(CreateAndEditCategoryVM model)
         {
             if (!ModelState.IsValid)
-                return View("CreateAndEdit", model);
+                return BadRequest(model);
 
             var category = new Category { Name = model.Name };
             _context.Add(category);
             _context.SaveChanges();
-            TempData["Message"] = "Save Successfully";
-            return RedirectToAction(nameof(Index));
+            return PartialView("_CategoryRow",category);
         }
 
         [HttpGet]
+        [AjaxFilter]
         public IActionResult Edit(int id)
         {
             var cat=_context.Categories.FirstOrDefault(c => c.Id == id);
@@ -50,7 +59,7 @@ namespace Bookify.Web.Controllers
                 return NotFound();
 
             var category=new CreateAndEditCategoryVM { Name = cat.Name ,Id=id};
-            return View("CreateAndEdit", category);
+            return PartialView("_CreateAndEdit",category);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -58,7 +67,7 @@ namespace Bookify.Web.Controllers
         {
             if(!ModelState.IsValid)
             {
-                return View("CreateAndEdit", model);
+                return BadRequest();
             }
             var cat=_context.Categories.FirstOrDefault(x=>x.Id== model.Id);
             if (cat == null) return NotFound();
@@ -66,7 +75,7 @@ namespace Bookify.Web.Controllers
             cat.LastUpdatedOn= DateTime.Now;    
             _context.SaveChanges();
             TempData["Message"] = "Modified Successfully";
-            return RedirectToAction(nameof(Index));
+            return PartialView("_CategoryRow", cat);
         }
 
         [HttpPost]

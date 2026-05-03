@@ -1,17 +1,16 @@
-// jQuery unobtrusive validation defaults
-
 $.validator.setDefaults({
-    errorClass: "",
-    validClass: "",
-
+    errorClass: "is-invalid",
+    validClass: "is-valid",
 
     highlight: function (element, errorClass, validClass) {
         $(element).addClass("is-invalid").removeClass("is-valid");
-        $(element.form).find("[data-valmsg-for=" + element.id + "]").addClass("invalid-feedback");
+        var elementName = $(element).attr("name");
+        $(element.form).find("[data-valmsg-for='" + elementName + "']").addClass("invalid-feedback");
     },
 
     unhighlight: function (element, errorClass, validClass) {
         $(element).addClass("is-valid").removeClass("is-invalid");
-        $(element.form).find("[data-valmsg-for=" + element.id + "]").removeClass("invalid-feedback");
+        var elementName = $(element).attr("name");
+        $(element.form).find("[data-valmsg-for='" + elementName + "']").removeClass("invalid-feedback");
     },
 });

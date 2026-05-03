@@ -21,6 +21,10 @@
     {
       "library": "sweetalert2@11.23.0",
       "destination": "wwwroot/lib/sweetalert2/"
+    },
+    {
+      "library": "jquery-ajax-unobtrusive@3.2.6",
+      "destination": "wwwroot/jquery-ajax-unobtrusive/"
     }
   ]
 }
