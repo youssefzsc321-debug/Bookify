@@ -22,10 +22,10 @@ namespace Bookify.Web.Controllers
             _context = context;
         }
 
-       
+
         public IActionResult Index()
         {
-            
+
             var categories = _context.Categories.AsNoTracking().ToList();
             return View(categories);
         }
@@ -34,7 +34,7 @@ namespace Bookify.Web.Controllers
         [AjaxFilter]
         public IActionResult Create()
         {
-            return PartialView("_CreateAndEdit"); 
+            return PartialView("_CreateAndEdit");
         }
 
         [HttpPost]
@@ -47,32 +47,32 @@ namespace Bookify.Web.Controllers
             var category = new Category { Name = model.Name };
             _context.Add(category);
             _context.SaveChanges();
-            return PartialView("_CategoryRow",category);
+            return PartialView("_CategoryRow", category);
         }
 
         [HttpGet]
         [AjaxFilter]
         public IActionResult Edit(int id)
         {
-            var cat=_context.Categories.FirstOrDefault(c => c.Id == id);
+            var cat = _context.Categories.FirstOrDefault(c => c.Id == id);
             if (cat == null)
                 return NotFound();
 
-            var category=new CreateAndEditCategoryVM { Name = cat.Name ,Id=id};
-            return PartialView("_CreateAndEdit",category);
+            var category = new CreateAndEditCategoryVM { Name = cat.Name, Id = id };
+            return PartialView("_CreateAndEdit", category);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(CreateAndEditCategoryVM model)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
-            var cat=_context.Categories.FirstOrDefault(x=>x.Id== model.Id);
+            var cat = _context.Categories.FirstOrDefault(x => x.Id == model.Id);
             if (cat == null) return NotFound();
-            cat.Name= model.Name;
-            cat.LastUpdatedOn= DateTime.Now;    
+            cat.Name = model.Name;
+            cat.LastUpdatedOn = DateTime.Now;
             _context.SaveChanges();
             TempData["Message"] = "Modified Successfully";
             return PartialView("_CategoryRow", cat);
@@ -82,13 +82,13 @@ namespace Bookify.Web.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult ToggleStatus(int id)
         {
-            var cat=_context.Categories.FirstOrDefault(x=>x.Id == id);
-            if(cat == null)
+            var cat = _context.Categories.FirstOrDefault(x => x.Id == id);
+            if (cat == null)
                 return NotFound();
-            cat.IsDeleted=!cat.IsDeleted;
+            cat.IsDeleted = !cat.IsDeleted;
             cat.LastUpdatedOn = DateTime.Now;
             _context.SaveChanges();
-            return Ok(cat.LastUpdatedOn.ToString()); 
+            return Ok(cat.LastUpdatedOn.ToString());
         }
 
 
