@@ -38,7 +38,60 @@ function OnModalSuccess(item) {
 
 $(document).ready(function () {
 
+    //begin datatables
+    var table = $('.table').DataTable({
+        "info": false,
+        "searchDelay": 0,
+        'order': [],
+        'pageLength': 10,
+        
+        dom:
+            "<'row'<'col-sm-12'tr>>" + 
+            "<'row'<'col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start'l>" + 
+            "<'col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end'p>>", 
+        buttons: [
+            {
+                extend: 'copyHtml5',
+                className: 'd-none',
+                exportOptions: { columns: ':not(.js-no-export)' }
+            },
+            {
+                extend: 'excelHtml5',
+                className: 'd-none',
+                exportOptions: { columns: ':not(.js-no-export)' }
+            },
+            {
+                extend: 'csvHtml5',
+                className: 'd-none',
+                exportOptions: { columns: ':not(.js-no-export)' }
+            },
+            {
+                extend: 'pdfHtml5',
+                className: 'd-none',
+                exportOptions: { columns: ':not(.js-no-export)' }
+            }
+        ]
+    });
 
+    $('[data-kt-filter="search"]').on('input', function () {
+        table.column(0).search($(this).val()).draw();
+    });
+
+    const exportButtons = document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]');
+
+    exportButtons.forEach(exportButton => {
+        exportButton.addEventListener('click', e => {
+            e.preventDefault();
+
+            
+            const exportValue = e.target.getAttribute('data-kt-export');
+            table.button('.buttons-' + exportValue).trigger();
+        });
+    });
+    //end datatables
+
+
+    //begin renderbutton
     $(document).on('click','.js-render-model', function () {
         
         var btn=$(this) 
@@ -66,6 +119,66 @@ $(document).ready(function () {
             })
         modal.modal('show')
     })
+    //end renderbutton
+
+
+    //Begin Toggle State
+    $(document).on('click', '.js-toggle-status', function () {
+        var btn = $(this);
+        var id = btn.data('id');
+        var token = $('input[name="__RequestVerificationToken"]').val();
+
+        bootbox.confirm({
+            message: 'Are you sure you want to toggle status?',
+            buttons: {
+                confirm: { label: 'Yes', className: 'btn-success' },
+                cancel: { label: 'No', className: 'btn-danger' }
+            },
+            callback: function (result) {
+                if (!result) return;
+
+                $.ajax({
+                    url: '/Categories/ToggleStatus/' + id,
+                    type: 'POST',
+                    data: { '__RequestVerificationToken': token },
+                    success: function (lastUpdatedOn) {
+                        var row = btn.closest('tr');
+                        var status = row.find('.js-status');
+
+                        var isDeleted = status.text().trim() === 'Deleted';
+                        var newStatus = isDeleted ? 'Available' : 'Deleted';
+
+                        status.text(newStatus);
+                        status.toggleClass('badge-light-success badge-light-danger');
+
+                        row.find('.js-updated-on').html(lastUpdatedOn);
+                        row.addClass('animate__animated animate__flash');
+
+                        //const Toast = Swal.mixin({
+                        //    toast: true,
+                        //    position: 'top-end',
+                        //    showConfirmButton: false,
+                        //    timer: 2000,
+                        //    timerProgressBar: true,
+                        //});
+                        //Toast.fire({
+                        //    icon: 'success',
+                        //    title: 'Status updated successfully'
+                        //});
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Something went wrong!',
+                        });
+                    }
+                });
+            }
+        });
+    });
+    //Begin Toggle State
+
     
 
     
