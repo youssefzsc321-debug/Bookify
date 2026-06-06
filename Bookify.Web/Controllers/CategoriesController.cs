@@ -91,6 +91,14 @@ namespace Bookify.Web.Controllers
             return Ok(cat.LastUpdatedOn.ToString());
         }
 
+        public IActionResult AllowItem(CreateAndEditCategoryVM model) 
+        {
+            var cat = _context.Categories.SingleOrDefault(c => c.Name == model.Name);
+            var isAllowed = cat == null || model.Id == cat.Id; 
+            return Json(isAllowed);
+
+        }
+
 
 
     }
