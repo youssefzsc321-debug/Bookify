@@ -21,19 +21,24 @@ function showErrorMessage(message = 'Something went wrong!') {
     });
 }
 
-function OnModalSuccess(item) {
+function OnModalSuccess(row) {
     showSuccessMessage();
     var modal = $('#Modal');
     modal.modal('hide');
-    if (updatedRow === undefined) {
 
-        $('tbody').append(item); 
-    }
-    else {
-        $(updatedRow).replaceWith(item);
+    var table = $('.table').DataTable();
+    var newRow = $(row);
+
+    if (updatedRow !== undefined) { 
+        table.row(updatedRow).remove(); 
+        table.row.add(newRow).draw(false).node(); 
         updatedRow = undefined;
     }
-
+    else {
+        table.row.add(newRow).draw(false).node();
+    }
+    KTMenu.init();
+    KTMenu.initHandlers();
 
 }
 

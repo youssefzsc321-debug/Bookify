@@ -1,4 +1,6 @@
-﻿using Bookify.Web.Core.Models;
+﻿using AutoMapper;
+using Bookify.Web.Core.Mapping;
+using Bookify.Web.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
@@ -13,21 +15,27 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bookify.Web.Controllers
 {
+
+    
     public class CategoriesController : Controller
     {
+    
+        private readonly IMapper _mapper;
+
         private readonly ApplicationDbContext _context;
 
-        public CategoriesController(ApplicationDbContext context)
+        public CategoriesController(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
 
         public IActionResult Index()
         {
-
             var categories = _context.Categories.AsNoTracking().ToList();
-            return View(categories);
+            var categoriesVM = _mapper.Map<IEnumerable<CategoryVM>>(categories);
+            return View(categoriesVM);
         }
 
         [HttpGet]
@@ -44,10 +52,13 @@ namespace Bookify.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(model);
 
-            var category = new Category { Name = model.Name };
+            var category = _mapper.Map<Category>(model);
+
             _context.Add(category);
             _context.SaveChanges();
-            return PartialView("_CategoryRow", category);
+
+            var catVM = _mapper.Map<CategoryVM>(category);
+            return PartialView("_CategoryRow", catVM);
         }
 
         [HttpGet]
@@ -58,7 +69,7 @@ namespace Bookify.Web.Controllers
             if (cat == null)
                 return NotFound();
 
-            var category = new CreateAndEditCategoryVM { Name = cat.Name, Id = id };
+            var category = _mapper.Map<CreateAndEditCategoryVM>(cat);
             return PartialView("_CreateAndEdit", category);
         }
         [HttpPost]
@@ -69,13 +80,13 @@ namespace Bookify.Web.Controllers
             {
                 return BadRequest();
             }
-            var cat = _context.Categories.FirstOrDefault(x => x.Id == model.Id);
-            if (cat == null) return NotFound();
-            cat.Name = model.Name;
-            cat.LastUpdatedOn = DateTime.Now;
+            var category = _context.Categories.FirstOrDefault(x => x.Id == model.Id);
+            if (category == null) return NotFound();
+            category = _mapper.Map(model, category);  
+            category.LastUpdatedOn = DateTime.Now;
             _context.SaveChanges();
-            TempData["Message"] = "Modified Successfully";
-            return PartialView("_CategoryRow", cat);
+            var catVM = _mapper.Map<CategoryVM>(category);
+            return PartialView("_CategoryRow", catVM);
         }
 
         [HttpPost]
