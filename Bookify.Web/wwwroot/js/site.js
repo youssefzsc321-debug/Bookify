@@ -33,7 +33,19 @@ function OnModalSuccess(item) {
         $(updatedRow).replaceWith(item);
         updatedRow = undefined;
     }
-    
+
+
+}
+
+function OnModalBegin() {
+    $('#Modal').find('button[type="submit"]').attr('disabled', 'disabled').attr('data-kt-indicator', 'on');
+
+
+}
+
+function OnModalComplete() {
+    $('#Modal').find('button[type="submit"]').removeAttr('disabled').removeAttr('data-kt-indicator');
+   
 }
 
 $(document).ready(function () {
