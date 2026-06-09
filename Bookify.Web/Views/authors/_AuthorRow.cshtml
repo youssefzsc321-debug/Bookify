@@ -1,4 +1,5 @@
-﻿@model CategoryVM
+﻿
+@model AuthorsVM
 <tr>
     <td>@Model.Name</td>
     <td>
@@ -17,8 +18,8 @@
             <div class="dropdown-menu dropdown-menu-end menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-150px py-3">
                 <div class="menu-item px-3">
                     <a herf="javascript:;"
-                       data-title="Edit Category"
-                       data-url="/Categories/Edit/@Model.Id"
+                       data-title="Edit Author"
+                       data-url="/Authors/Edit/@Model.Id"
                        data-update="true"
                        class="menu-link px-3 js-render-model">
                         <span class="menu-icon"><i class="bi bi-pencil-square"></i></span>
@@ -26,8 +27,8 @@
                     </a>
                 </div>
                 <div class="menu-item px-3">
-                    <a href="javascript:;" class="menu-link px-3 flex-stack js-toggle-status" data-id="@Model.Id"
-                       data-url="/Categories/ToggleStatus/@Model.Id"
+                    <a href="javascript:;" class="menu-link px-3 flex-stack js-toggle-status"
+                       data-url="/Authors/ToggleStatus/@Model.Id"
                        >
                         Toggle Status
                     </a>

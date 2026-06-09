@@ -1,5 +1,5 @@
 ﻿var updatedRow;
-function showSuccessMessage(message = (updatedRow === undefined ? 'Saved successfully!' :'Modified successfully!')) {
+function showSuccessMessage(message = (updatedRow === undefined ? 'Saved successfully!' : 'Modified successfully!')) {
     Swal.fire({
         icon: 'success',
         title: 'Success',
@@ -29,9 +29,9 @@ function OnModalSuccess(row) {
     var table = $('.table').DataTable();
     var newRow = $(row);
 
-    if (updatedRow !== undefined) { 
-        table.row(updatedRow).remove(); 
-        table.row.add(newRow).draw(false).node(); 
+    if (updatedRow !== undefined) {
+        table.row(updatedRow).remove();
+        table.row.add(newRow).draw(false).node();
         updatedRow = undefined;
     }
     else {
@@ -50,7 +50,7 @@ function OnModalBegin() {
 
 function OnModalComplete() {
     $('#Modal').find('button[type="submit"]').removeAttr('disabled').removeAttr('data-kt-indicator');
-   
+
 }
 
 $(document).ready(function () {
@@ -61,11 +61,11 @@ $(document).ready(function () {
         "searchDelay": 0,
         'order': [],
         'pageLength': 10,
-        
+
         dom:
-            "<'row'<'col-sm-12'tr>>" + 
-            "<'row'<'col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start'l>" + 
-            "<'col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end'p>>", 
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start'l>" +
+            "<'col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end'p>>",
         buttons: [
             {
                 extend: 'copyHtml5',
@@ -100,7 +100,7 @@ $(document).ready(function () {
         exportButton.addEventListener('click', e => {
             e.preventDefault();
 
-            
+
             const exportValue = e.target.getAttribute('data-kt-export');
             table.button('.buttons-' + exportValue).trigger();
         });
@@ -109,13 +109,12 @@ $(document).ready(function () {
 
 
     //begin renderbutton
-    $(document).on('click','.js-render-model', function () {
-        
-        var btn=$(this) 
-        var modal = $('#Modal') 
+    $(document).on('click', '.js-render-model', function () {
 
-        if (btn.data('update') !== undefined) 
-        {
+        var btn = $(this)
+        var modal = $('#Modal')
+
+        if (btn.data('update') !== undefined) {
             updatedRow = btn.parents('tr');
         }
         else {
@@ -123,17 +122,17 @@ $(document).ready(function () {
         }
         modal.find('#ModalLabel').text(btn.data('title'))
 
-            $.ajax({
-                url: btn.data('url'),
-                success: function (form) { 
+        $.ajax({
+            url: btn.data('url'),
+            success: function (form) {
 
-                    modal.find('.modal-body').html(form)  
-                    $.validator.unobtrusive.parse("#ModalForm");
-                },
-                error: function () {
-                    showErrorMessage()
-                }
-            })
+                modal.find('.modal-body').html(form)
+                $.validator.unobtrusive.parse("#ModalForm");
+            },
+            error: function () {
+                showErrorMessage()
+            }
+        })
         modal.modal('show')
     })
     //end renderbutton
@@ -142,7 +141,6 @@ $(document).ready(function () {
     //Begin Toggle State
     $(document).on('click', '.js-toggle-status', function () {
         var btn = $(this);
-        var id = btn.data('id');
         var token = $('input[name="__RequestVerificationToken"]').val();
 
         bootbox.confirm({
@@ -155,7 +153,7 @@ $(document).ready(function () {
                 if (!result) return;
 
                 $.ajax({
-                    url: '/Categories/ToggleStatus/' + id,
+                    url: btn.data('url'),
                     type: 'POST',
                     data: { '__RequestVerificationToken': token },
                     success: function (lastUpdatedOn) {
@@ -169,19 +167,12 @@ $(document).ready(function () {
                         status.toggleClass('badge-light-success badge-light-danger');
 
                         row.find('.js-updated-on').html(lastUpdatedOn);
+
                         row.addClass('animate__animated animate__flash');
 
-                        //const Toast = Swal.mixin({
-                        //    toast: true,
-                        //    position: 'top-end',
-                        //    showConfirmButton: false,
-                        //    timer: 2000,
-                        //    timerProgressBar: true,
-                        //});
-                        //Toast.fire({
-                        //    icon: 'success',
-                        //    title: 'Status updated successfully'
-                        //});
+                        row.one('animationend webkitAnimationEnd oAnimationEnd', function () {
+                            row.removeClass('animate__animated animate__flash');
+                        });
                     },
                     error: function (xhr) {
                         Swal.fire({
@@ -196,8 +187,8 @@ $(document).ready(function () {
     });
     //Begin Toggle State
 
-    
 
-    
+
+
 
 });

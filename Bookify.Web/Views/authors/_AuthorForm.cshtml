@@ -1,0 +1,24 @@
+﻿@model CreateAndEditAuthorVM
+<form id="ModalForm"
+      asp-controller="Authors"
+      asp-action="@(Model?.Id>0?"Edit":"Create")"
+      data-ajax="true"
+      data-ajax-method="post"
+      data-ajax-begin="OnModalBegin"
+      data-ajax-success="OnModalSuccess"
+      data-ajax-failure="showErrorMessage"
+      data-ajax-complete="OnModalComplete">
+    
+    @if (Model?.Id > 0)
+    {
+        <input hidden asp-for="Id">
+    }
+    <div class="mb-5">
+        <div class="form-floating mb-2">
+            <input type="text" class="form-control" asp-for="Name" placeholder="" />
+            <label asp-for="Name"></label>
+            <span asp-validation-for="Name"></span>
+        </div>
+    </div>
+
+</form>

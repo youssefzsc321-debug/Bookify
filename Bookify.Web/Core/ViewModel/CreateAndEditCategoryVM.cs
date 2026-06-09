@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Bookify.Web.Core.Consts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookify.Web.Core.ViewModel
@@ -7,10 +8,9 @@ namespace Bookify.Web.Core.ViewModel
     public class CreateAndEditCategoryVM
     {
         public int Id { get; set; }
-        [MaxLength(100,ErrorMessage ="Max Length Is 100 Charcter"),MinLength(3,ErrorMessage ="Enter at least 3 charcters")]
+        [MaxLength(100, ErrorMessage = Errors.MaxLength), Display(Name = "Category")]
+        [Remote(action: "AllowItem", controller: "Categories", AdditionalFields = "Id", ErrorMessage = Errors.Duplicated)]
+        public string Name { get; set; }
 
-        [Remote(action: "AllowItem", controller: "Categories", AdditionalFields = "Id", ErrorMessage = "This Category is exist")]
-
-        public string Name { get; set; } = null!;
     }
 }
