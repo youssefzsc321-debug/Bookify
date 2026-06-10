@@ -1,0 +1,11 @@
+﻿namespace Bookify.Web.Core.Models
+{
+    public class BookCategory
+    {
+        public int BookId { get; set; }
+        public Book book { get; set; }
+        public int CategoryId { get; set; }
+        public Category Category { get; set; }
+
+    }
+}
