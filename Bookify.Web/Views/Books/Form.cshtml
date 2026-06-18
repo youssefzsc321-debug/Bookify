@@ -1,0 +1,138 @@
+﻿@model BookFormVM
+@{
+    ViewData["Title"] = "Book Form";
+}
+
+<div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
+    <div class="symbol symbol-40px me-4 mb-5 mb-sm-0">
+        <div class="symbol-label fs-2 fw-semibold text-success">
+            <span class="svg-icon svg-icon-2 svg-icon-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-books" viewBox="0 0 16 16">
+                    <path d="M8 3.5v11M8 14.5c-1.5-1.2-4.5-1.5-6.5-.5V2.5c2-.9 5-.7 6.5.7M8 14.5c1.5-1.2 4.5-1.5 6.5-.5V2.5c-2-.9-5-.7-6.5.7"
+                          stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                    <path d="M2.5 4.5v7.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" opacity="0.7" />
+                    <path d="M13.5 4.5v7.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" opacity="0.7" />
+                </svg>
+            </span>
+        </div>
+    </div>
+    <div class="d-flex flex-column pe-0 pe-sm-10">
+        <h4 class="fw-bold text-primary mb-0">@(Model.Id > 0 ? "Edit " : "Add ")Book</h4>
+    </div>
+    <div class="ms-sm-auto">
+        <a href="javascript:;" class="btn btn-sm btn-primary js-render-model"
+           data-title="Add Author"
+           data-url="/Authors/Create">
+            <i class="bi bi-plus-square-dotted"></i> Add
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-9">
+        <form asp-controller="Books" asp-action="@(Model.Id > 0 ? "Edit" : "Create")" method="post" enctype="multipart/form-data">
+
+            @if (Model.Id > 0)
+            {
+                <input type="hidden" asp-for="Id" />
+            }
+
+            @* --- Row 1: Title and Publisher --- *@
+            <div class="row g-9 mb-8">
+                <div class="col-md-6 fv-row">
+                    <label asp-for="Title" class="form-label fs-6 fw-bold text-gray-700 mb-2">Book Title</label>
+                    <input type="text" asp-for="Title" class="form-control form-control-solid" placeholder="Enter book title" />
+                    <span asp-validation-for="Title" class="text-danger d-block mt-1"></span>
+                </div>
+
+                <div class="col-md-6 fv-row">
+                    <label asp-for="Publisher" class="form-label fs-6 fw-bold text-gray-700 mb-2">Publisher</label>
+                    <input type="text" asp-for="Publisher" class="form-control form-control-solid" placeholder="Enter publisher name" />
+                    <span asp-validation-for="Publisher" class="text-danger d-block mt-1"></span>
+                </div>
+            </div>
+
+            @* --- Row 2: Author and Publishing Date --- *@
+            <div class="row g-9 mb-8">
+                <div class="col-md-6 fv-row">
+                    <label asp-for="AuthorsId" class="form-label fs-6 fw-bold text-gray-700 mb-2">Author</label>
+                    <select asp-for="AuthorsId" asp-items="Model.Authors" class="form-select form-control-solid" data-control="select2" data-placeholder="Select an author">
+                        <option value="">Select Author...</option>
+                    </select>
+                    <span asp-validation-for="AuthorsId" class="text-danger d-block mt-1"></span>
+                </div>
+
+                <div class="col-md-6 fv-row">
+                    <label asp-for="PublishingDate" class="form-label fs-6 fw-bold text-gray-700 mb-2">Publishing Date</label>
+                    <input type="date" asp-for="PublishingDate" class="form-control form-control-solid" />
+                    <span asp-validation-for="PublishingDate" class="text-danger d-block mt-1"></span>
+                </div>
+            </div>
+
+            @* --- Row 3: Categories and Hall --- *@
+            <div class="row g-9 mb-8">
+                <div class="col-md-6 fv-row">
+                    <label asp-for="SelectedCategories" class="form-label fs-6 fw-bold text-gray-700 mb-2">Categories</label>
+                    <select asp-for="SelectedCategories" asp-items="Model.Categories" class="form-select form-control-solid" data-control="select2" data-placeholder="Select categories" multiple="multiple">
+                    </select>
+                    <span asp-validation-for="SelectedCategories" class="text-danger d-block mt-1"></span>
+                </div>
+
+                <div class="col-md-6 fv-row">
+                    <label asp-for="Hall" class="form-label fs-6 fw-bold text-gray-700 mb-2">Hall</label>
+                    <input type="text" asp-for="Hall" class="form-control form-control-solid" placeholder="Enter hall number/name" />
+                    <span asp-validation-for="Hall" class="text-danger d-block mt-1"></span>
+                </div>
+            </div>
+
+            @* --- Row 4: Image Upload and Rental Status --- *@
+            <div class="row g-9 mb-8">
+                <div class="col-md-6 fv-row">
+                    <label asp-for="Image" class="form-label fs-6 fw-bold text-gray-700 mb-2">Book Cover Image</label>
+
+                    <div class="d-flex align-items-center gap-5">
+                        <div class="flex-grow-1">
+                            <input type="file" asp-for="Image" class="form-control form-control-solid" accept=".jpg,.jpeg,.png" />
+                            <span asp-validation-for="Image" class="text-danger d-block mt-1 fw-bold"></span>
+                            <div class="form-text text-muted">Allowed types: png, jpg, jpeg.</div>
+                        </div>
+
+                        @if (Model.Id > 0 && !string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <div class="symbol symbol-75px symbol-lg-100px bg-light-secondary d-flex align-items-center justify-content-center border border-dashed border-gray-400 p-1 rounded" style="width: 90px; height: 120px; overflow: hidden;" title="Current Book Cover">
+                                <img src="/Images/Books/@Model.ImageUrl" alt="Current Cover" class="w-100 h-100" style="object-fit: cover;" />
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-6 fv-row d-flex align-items-center mt-10">
+                    <div class="form-check form-check-custom form-check-solid form-switch">
+                        <input class="form-check-input" type="checkbox" asp-for="IsAvailableForRental" />
+                        <label class="form-check-label fs-6 fw-bold text-gray-700 ms-3" asp-for="IsAvailableForRental"></label>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Row 5: Description --- *@
+            <div class="fv-row mb-8">
+                <label asp-for="Description" class="form-label fs-6 fw-bold text-gray-700 mb-2">Description</label>
+                <textarea asp-for="Description" class="form-control form-control-solid" rows="4" placeholder="Write a brief summary about the book..."></textarea>
+                <span asp-validation-for="Description" class="text-danger d-block mt-1"></span>
+            </div>
+
+            @* --- Form Action Buttons --- *@
+            <div class="d-flex justify-content-end p-5">
+                <a href="/Books" class="btn btn-light me-3">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <span class="indicator-label">Save Changes</span>
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

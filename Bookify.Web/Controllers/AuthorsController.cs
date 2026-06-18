@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Bookify.Web.Core.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bookify.Web.Controllers
@@ -19,6 +20,7 @@ namespace Bookify.Web.Controllers
         [HttpGet]
         public IActionResult Index()
         {
+            
             var authores = _context.Authors.AsNoTracking().ToList();
             var authorsVm=mapper.Map<IEnumerable<AuthorsVM>>(authores);
             return View(authorsVm);
