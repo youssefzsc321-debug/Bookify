@@ -1,4 +1,6 @@
-﻿namespace Bookify.Web.Core.ViewModel
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace Bookify.Web.Core.ViewModel
 {
     public class AuthorsVM
     {

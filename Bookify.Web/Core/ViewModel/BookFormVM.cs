@@ -1,6 +1,8 @@
 ﻿using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using UoN.ExpressiveAnnotations.NetCore.Attributes;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Bookify.Web.Core.ViewModel
@@ -9,11 +11,15 @@ namespace Bookify.Web.Core.ViewModel
     {
         public int Id { get; set; }
         [MaxLength(500, ErrorMessage = Errors.MaxLength)]
+
+
+        [Remote(action: "AllowItem", controller: "Books", AdditionalFields = "AuthorsId,Id", ErrorMessage = Errors.TitleWithTheSameAuthor)]
         public string Title { get; set; }
 
 
 
         [Display(Name = "Author")]
+        [Remote(action: "AllowItem", controller: "Books", AdditionalFields = "Title,Id", ErrorMessage = Errors.AuthorWithTheSameTitle)]
         public int AuthorsId { get; set; }
         public IEnumerable<SelectListItem>? Authors { get; set; }
 
@@ -21,10 +27,14 @@ namespace Bookify.Web.Core.ViewModel
         public string Publisher { get; set; }
 
         [Display(Name = "Publishing Date")]
+
+        
+        [AssertThat("PublishingDate <=Today()" , ErrorMessage =Errors.NotAllowFuteruData)]  
         public DateTime PublishingDate { get; set; }
 
         public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
+        
 
         [MaxLength(50, ErrorMessage = Errors.MaxLength)]
         public string Hall { get; set; }

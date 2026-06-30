@@ -37,6 +37,48 @@
                 <input type="hidden" asp-for="Id" />
             }
 
+            @* --- Metronic Image Input Section --- *@
+            <div class="mb-10">
+                <label class="form-label fs-6 fw-bold text-gray-700 d-block mb-3">Book Cover Image</label>
+
+                <!--begin::Image input-->
+                <div class="image-input image-input-empty mb-3" data-kt-image-input="true" style="background-image:url(@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/Gemini_Generated_Image_mrv14jmrv14jmrv1.png" : Model.ImageUrl))">
+                    <!--begin::Image preview wrapper-->
+                    <div class="image-input-wrapper w-125px h-200px"></div>
+                    <!--end::Image preview wrapper-->
+                    <!--begin::Edit button-->
+                    <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-25px h-25px bg-body shadow"
+                           data-kt-image-input-action="change"
+                           data-bs-dismiss="click">
+                        <i class="bi bi-pencil-fill fs-7"></i>
+
+                        <!--begin::Inputs-->
+                        <input type="file" asp-for="Image" accept=".png, .jpg, .jpeg" />
+                        <input type="hidden" name="avatar_remove" />
+                        <!--end::Inputs-->
+                    </label>
+                    <!--end::Edit button-->
+                    <!--begin::Cancel button-->
+                    <span class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-25px h-25px bg-body shadow"
+                          data-kt-image-input-action="cancel"
+                          data-bs-dismiss="click">
+                        <i class="bi bi-x fs-2"></i>
+                    </span>
+                    <!--end::Cancel button-->
+                    <!--begin::Remove button-->
+                    <span class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-25px h-25px bg-body shadow"
+                          data-kt-image-input-action="remove"
+                          data-bs-dismiss="click">
+                        <i class="bi bi-x fs-2"></i>
+                    </span>
+                    <!--end::Remove button-->
+                </div>
+                <!--end::Image input-->
+
+                <div class="form-text text-muted mb-2">Allowed types: png, jpg, jpeg.</div>
+                <span asp-validation-for="Image" class="text-danger d-block"></span>
+            </div>
+
             @* --- Row 1: Title and Publisher --- *@
             <div class="row g-9 mb-8">
                 <div class="col-md-6 fv-row">
@@ -56,7 +98,7 @@
             <div class="row g-9 mb-8">
                 <div class="col-md-6 fv-row">
                     <label asp-for="AuthorsId" class="form-label fs-6 fw-bold text-gray-700 mb-2">Author</label>
-                    <select asp-for="AuthorsId" asp-items="Model.Authors" class="form-select form-control-solid" data-control="select2" data-placeholder="Select an author">
+                    <select asp-for="AuthorsId" asp-items="Model.Authors" class="form-select form-control-solid js-select2" data-control="select2" data-placeholder="Select an author">
                         <option value="">Select Author...</option>
                     </select>
                     <span asp-validation-for="AuthorsId" class="text-danger d-block mt-1"></span>
@@ -64,7 +106,7 @@
 
                 <div class="col-md-6 fv-row">
                     <label asp-for="PublishingDate" class="form-label fs-6 fw-bold text-gray-700 mb-2">Publishing Date</label>
-                    <input type="date" asp-for="PublishingDate" class="form-control form-control-solid" />
+                    <input type="text" asp-for="PublishingDate" class="form-control form-control-solid js-datepicker" />
                     <span asp-validation-for="PublishingDate" class="text-danger d-block mt-1"></span>
                 </div>
             </div>
@@ -73,7 +115,7 @@
             <div class="row g-9 mb-8">
                 <div class="col-md-6 fv-row">
                     <label asp-for="SelectedCategories" class="form-label fs-6 fw-bold text-gray-700 mb-2">Categories</label>
-                    <select asp-for="SelectedCategories" asp-items="Model.Categories" class="form-select form-control-solid" data-control="select2" data-placeholder="Select categories" multiple="multiple">
+                    <select asp-for="SelectedCategories" asp-items="Model.Categories" class="form-select form-control-solid js-select2" data-control="select2" data-placeholder="Select categories" multiple="multiple">
                     </select>
                     <span asp-validation-for="SelectedCategories" class="text-danger d-block mt-1"></span>
                 </div>
@@ -85,28 +127,9 @@
                 </div>
             </div>
 
-            @* --- Row 4: Image Upload and Rental Status --- *@
+            @* --- Row 4: Rental Status --- *@
             <div class="row g-9 mb-8">
-                <div class="col-md-6 fv-row">
-                    <label asp-for="Image" class="form-label fs-6 fw-bold text-gray-700 mb-2">Book Cover Image</label>
-
-                    <div class="d-flex align-items-center gap-5">
-                        <div class="flex-grow-1">
-                            <input type="file" asp-for="Image" class="form-control form-control-solid" accept=".jpg,.jpeg,.png" />
-                            <span asp-validation-for="Image" class="text-danger d-block mt-1 fw-bold"></span>
-                            <div class="form-text text-muted">Allowed types: png, jpg, jpeg.</div>
-                        </div>
-
-                        @if (Model.Id > 0 && !string.IsNullOrEmpty(Model.ImageUrl))
-                        {
-                            <div class="symbol symbol-75px symbol-lg-100px bg-light-secondary d-flex align-items-center justify-content-center border border-dashed border-gray-400 p-1 rounded" style="width: 90px; height: 120px; overflow: hidden;" title="Current Book Cover">
-                                <img src="/Images/Books/@Model.ImageUrl" alt="Current Cover" class="w-100 h-100" style="object-fit: cover;" />
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <div class="col-md-6 fv-row d-flex align-items-center mt-10">
+                <div class="col-md-6 fv-row d-flex align-items-center">
                     <div class="form-check form-check-custom form-check-solid form-switch">
                         <input class="form-check-input" type="checkbox" asp-for="IsAvailableForRental" />
                         <label class="form-check-label fs-6 fw-bold text-gray-700 ms-3" asp-for="IsAvailableForRental"></label>

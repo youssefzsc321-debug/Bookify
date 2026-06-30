@@ -55,6 +55,15 @@ function OnModalComplete() {
 
 $(document).ready(function () {
 
+    //selec2
+    $('.js-select2').select2();
+
+    //Datapicker
+    $('.js-datepicker').daterangepicker({
+        singleDatePicker: true,
+        autoApply: true
+        
+    });
     //begin datatables
     var table = $('.table').DataTable({
         "info": false,
