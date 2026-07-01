@@ -55,14 +55,47 @@ function OnModalComplete() {
 
 $(document).ready(function () {
 
+    //Disable submit button on any while processing
+    if ($.validator) {
+        $.validator.setDefaults({
+            ignore: function (index, element) {
+                return $(element).is(':hidden') && !$(element).hasClass('select2-hidden-accessible');
+            }
+        });
+    }
+
+    $('form').on('submit', function (e) {
+        var $form = $(this);
+
+        if ($form.valid && !$form.valid()) {
+            return;
+        }
+
+        var formId = $form.attr('id');
+        var $submitButton = $form.find('button[type="submit"]');
+
+        if ($submitButton.length === 0 && formId) {
+            $submitButton = $('button[type="submit"][form="' + formId + '"]');
+        }
+
+        if ($submitButton.length > 0) {
+            $submitButton.attr('disabled', 'disabled').attr('data-kt-indicator', 'on');
+        }
+    });
     //selec2
     $('.js-select2').select2();
 
+    $('.js-select2').on('change', function () {
+        $(this).valid();
+    });
+    $.validator.setDefaults({
+        ignore: [], 
+    });
     //Datapicker
     $('.js-datepicker').daterangepicker({
         singleDatePicker: true,
         autoApply: true
-        
+
     });
     //begin datatables
     var table = $('.table').DataTable({

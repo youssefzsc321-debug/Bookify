@@ -34,7 +34,8 @@ namespace Bookify.Web.Core.ViewModel
 
         public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
-        
+        public string? imageThumbnailUrl { get; set; }
+
 
         [MaxLength(50, ErrorMessage = Errors.MaxLength)]
         public string Hall { get; set; }
