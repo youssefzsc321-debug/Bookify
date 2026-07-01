@@ -42,6 +42,7 @@ function OnModalSuccess(row) {
 
 }
 
+
 function OnModalBegin() {
     $('#Modal').find('button[type="submit"]').attr('disabled', 'disabled').attr('data-kt-indicator', 'on');
 
@@ -152,14 +153,12 @@ $(document).ready(function () {
 
     //begin renderbutton
     $(document).on('click', '.js-render-model', function () {
-
         var btn = $(this)
         var modal = $('#Modal')
 
         if (btn.data('update') !== undefined) {
             updatedRow = btn.parents('tr');
-        }
-        else {
+        } else {
             updatedRow = undefined;
         }
         modal.find('#ModalLabel').text(btn.data('title'))
@@ -167,7 +166,6 @@ $(document).ready(function () {
         $.ajax({
             url: btn.data('url'),
             success: function (form) {
-
                 modal.find('.modal-body').html(form)
                 $.validator.unobtrusive.parse("#ModalForm");
             },
@@ -177,12 +175,14 @@ $(document).ready(function () {
         })
         modal.modal('show')
     })
+
     //end renderbutton
 
 
-    //Begin Toggle State
+    ///Begin Toggle State
     $(document).on('click', '.js-toggle-status', function () {
         var btn = $(this);
+        var url = btn.data('url');
         var token = $('input[name="__RequestVerificationToken"]').val();
 
         bootbox.confirm({
@@ -195,33 +195,22 @@ $(document).ready(function () {
                 if (!result) return;
 
                 $.ajax({
-                    url: btn.data('url'),
+                    url: url,
                     type: 'POST',
                     data: { '__RequestVerificationToken': token },
                     success: function (lastUpdatedOn) {
                         var row = btn.closest('tr');
                         var status = row.find('.js-status');
-
                         var isDeleted = status.text().trim() === 'Deleted';
                         var newStatus = isDeleted ? 'Available' : 'Deleted';
 
                         status.text(newStatus);
                         status.toggleClass('badge-light-success badge-light-danger');
-
                         row.find('.js-updated-on').html(lastUpdatedOn);
-
                         row.addClass('animate__animated animate__flash');
-
-                        row.one('animationend webkitAnimationEnd oAnimationEnd', function () {
-                            row.removeClass('animate__animated animate__flash');
-                        });
                     },
                     error: function (xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Oops...',
-                            text: 'Something went wrong!',
-                        });
+                        Swal.fire({ icon: 'error', title: 'Oops...', text: 'Something went wrong!' });
                     }
                 });
             }

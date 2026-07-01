@@ -25,7 +25,11 @@ namespace Bookify.Web.Core.Mapping
             //Books
             CreateMap<BookFormVM, Book>().ReverseMap()
                 .ForMember(dest => dest.Categories, opt => opt.Ignore());
-            
+
+
+            CreateMap<Book, BookDetailsVM>()
+                .ForMember(dest => dest.AuthorsName, opt => opt.MapFrom(opt => opt.Author.Name))
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(opt => opt.Categories.Select(c => c.Category.Name).ToList()));
 
         }
     }

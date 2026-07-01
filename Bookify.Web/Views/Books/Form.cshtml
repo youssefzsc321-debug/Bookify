@@ -13,9 +13,16 @@
         </h3>
 
         <div class="card-toolbar">
-            <a href="/Books" class="btn btn-sm btn-light-primary">
-                <i class="bi bi-arrow-left"></i> Back to List
-            </a>
+            @{
+                if (Model.Id > 0)
+                {
+                    <a class="btn btn-sm btn-light-primary" asp-action="Details" asp-controller="Books" asp-route-id="@Model.Id">
+                        <i class="bi bi-arrow-rigth"></i> Go to Details
+                    </a>
+                }
+            }
+
+
         </div>
     </div>
 
