@@ -6,12 +6,8 @@
 
 @section Styles {
     <link href="~/assets/plugins/datatables/datatables.bundle.css" rel="stylesheet" />
-    <style>
-        .dt-buttons {
-            display: none !important;
-        }
-    </style>
 }
+<!--Begin Header-->
 <div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
     <!--begin::Icon-->
     <div class="symbol symbol-40px me-4 mb-5 mb-sm-0">
@@ -41,6 +37,7 @@
     </div>
     <!--end::Action-->
 </div>
+<!--End Header-->
 
 <div class="card shadow-sm">
     <div class="card-header align-items-center py-5 gap-2 gap-md-5">
@@ -113,7 +110,7 @@
         else
         {
             <div class="table-responsive">
-                <table class="table table-row-dashed table-row-gray-300 gy-7 table">
+                <table id="table-js" class="table-row-dashed table-row-gray-300 gy-7 table">
                     <thead>
                         <tr class="fw-bold fs-6 text-gray-800">
                             <th>Name</th>
@@ -136,9 +133,7 @@
 </div>
 
 @section Plugins {
-
     <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
-
 }
 
 @section Scripts

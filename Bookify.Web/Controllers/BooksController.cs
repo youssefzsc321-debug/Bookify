@@ -13,6 +13,8 @@ using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
+using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -51,28 +53,61 @@ namespace Bookify.Web.Controllers
             return View();
         }
 
-        public IActionResult Details(int id)
+        [HttpPost]
+        public IActionResult GetBooks()
         {
             
 
-            var book =_context.Books
-                .Include(b=>b.Author) 
-                .Include(b=>b.Categories) 
-                .ThenInclude(b=>b.Category)
-                .FirstOrDefault(b=>b.Id== id);
+            IQueryable<Book> books = _context.Books.Include(b=>b.Author).Include(b=>b.Categories).ThenInclude(b=>b.Category);
+            
+            var skip = int.Parse(Request.Form["start"]);
+            
+            var take = int.Parse(Request.Form["length"]);
+
+            var sortColumnIndex=Request.Form["order[0][column]"];
+            
+            var sortColumnName =Request.Form[$"columns[{sortColumnIndex}][name]"];  
+
+            var sortColumnDir = Request.Form["order[0][dir]"];
+
+            var searchValue = Request.Form["search[value]"];
+            if(!string.IsNullOrEmpty(searchValue))
+                books=books.Where(b=>b.Title.Contains(searchValue)||b.Author.Name.Contains(searchValue));
+            
+
+            books = books.OrderBy(($"{sortColumnName} {sortColumnDir}"));
+
+
+            var data = books.Skip(skip).Take(take).ToList();
+
+            var mappedData=mapper.Map<IEnumerable<BookDetailsVM>>(data);
+            var recordesTotal = books.Count();
+            var recordsFiltered = recordesTotal;
+            return Ok(new { recordesTotal = recordesTotal, recordsFiltered = recordsFiltered, data = mappedData }); 
+            
+        }
+        public IActionResult Details(int id)
+        {
+
+
+            var book = _context.Books
+                .Include(b => b.Author)
+                .Include(b => b.Categories)
+                .ThenInclude(b => b.Category)
+                .FirstOrDefault(b => b.Id == id);
 
             if (book is null) return NotFound();
 
-         
-            var bookmodel=mapper.Map<BookDetailsVM>(book);
+
+            var bookmodel = mapper.Map<BookDetailsVM>(book);
 
 
             bookmodel.AuthorsName = book.Author.Name;
-            bookmodel.Categories=book.Categories.Select(c=>c.Category.Name).ToList();
-           
+            bookmodel.Categories = book.Categories.Select(c => c.Category.Name).ToList();
+
             return View(bookmodel);
 
-           
+
         }
         [HttpGet]
         public IActionResult Create()
@@ -136,8 +171,8 @@ namespace Bookify.Web.Controllers
             _context.Books.Add(book);
             _context.SaveChanges();
 
-           
-            return RedirectToAction(nameof(Details), new { id = book.Id });  
+
+            return RedirectToAction(nameof(Details), new { id = book.Id });
         }
 
 
@@ -247,7 +282,7 @@ namespace Bookify.Web.Controllers
             _context.SaveChanges();
 
 
-            return RedirectToAction(nameof(Details), new { id = book.Id }); 
+            return RedirectToAction(nameof(Details), new { id = book.Id });
         }
 
         public IActionResult AllowItem(BookFormVM model)
@@ -264,6 +299,19 @@ namespace Bookify.Web.Controllers
 
             var res = $"{parts[0]}{seperator}c_thumb,g_face,w_200,h_200/{parts[1]}";
             return res;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleStatus(int id)
+        {
+            var book = _context.Books.FirstOrDefault(x => x.Id == id);
+            if (book == null)
+                return NotFound();
+            book.IsDeleted = !book.IsDeleted;
+            book.LastUpdatedOn = DateTime.Now;
+            _context.SaveChanges();
+            return Ok(book.LastUpdatedOn.ToString());
         }
     }
 }

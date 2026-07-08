@@ -6,11 +6,6 @@
 
 @section Styles {
     <link href="~/assets/plugins/datatables/datatables.bundle.css" rel="stylesheet" />
-    <style>
-        .dt-buttons {
-            display: none !important;
-        }
-    </style>
 }
 <div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
     <!--begin::Icon-->
@@ -113,7 +108,7 @@
         else
         {
             <div class="table-responsive">
-                <table class="table table-row-dashed table-row-gray-300 gy-7 table">
+                <table id="table-js" class="table-row-dashed table-row-gray-300 gy-7 table">
                     <thead>
                         <tr class="fw-bold fs-6 text-gray-800">
                             <th>Name</th>
@@ -134,11 +129,8 @@
         }
     </div>
 </div>
-
 @section Plugins {
-
     <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
-
 }
 
 @section Scripts

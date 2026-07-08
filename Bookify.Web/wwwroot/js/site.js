@@ -99,7 +99,7 @@ $(document).ready(function () {
 
     });
     //begin datatables
-    var table = $('.table').DataTable({
+    var table = $('#table-js').DataTable({
         "info": false,
         "searchDelay": 0,
         'order': [],
@@ -216,7 +216,7 @@ $(document).ready(function () {
             }
         });
     });
-    //Begin Toggle State
+    //end Toggle State
 
 
 
