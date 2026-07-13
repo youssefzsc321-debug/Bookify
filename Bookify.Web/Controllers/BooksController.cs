@@ -92,6 +92,7 @@ namespace Bookify.Web.Controllers
 
             var book = _context.Books
                 .Include(b => b.Author)
+                .Include(b=>b.BookCopies)
                 .Include(b => b.Categories)
                 .ThenInclude(b => b.Category)
                 .FirstOrDefault(b => b.Id == id);
@@ -309,7 +310,7 @@ namespace Bookify.Web.Controllers
             if (book == null)
                 return NotFound();
             book.IsDeleted = !book.IsDeleted;
-            book.LastUpdatedOn = DateTime.Now;
+
             _context.SaveChanges();
             return Ok(book.LastUpdatedOn.ToString());
         }

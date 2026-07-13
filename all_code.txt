@@ -129,6 +129,39 @@ namespace Bookify.Web.Controllers
     }
 }
 \n
+=== FILE: ./Bookify.Web/Controllers/BookCopiesController.cs
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace Bookify.Web.Controllers
+{
+    public class BookCopiesController : Controller
+    {
+        private readonly ApplicationDbContext context;
+
+        public BookCopiesController(ApplicationDbContext context)
+        {
+            this.context = context;
+        }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleStatus(int id) 
+        {
+            var copy=context.BookCopies.FirstOrDefault(x => x.Id == id);
+            if (copy is null) return NotFound();
+            copy.IsDeleted=!copy.IsDeleted;
+            copy.LastUpdatedOn= DateTime.Now;
+            context.SaveChanges();
+            return Ok(copy.LastUpdatedOn.ToString());
+
+        }
+    }
+}
+\n
 === FILE: ./Bookify.Web/Controllers/BooksController.cs
 ﻿using AutoMapper;
 using Bookify.Web.Core.Consts;
@@ -145,9 +178,12 @@ using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
+using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bookify.Web.Controllers
 {
@@ -182,84 +218,62 @@ namespace Bookify.Web.Controllers
             return View();
         }
 
+        [HttpPost]
+        public IActionResult GetBooks()
+        {
+            
+
+            IQueryable<Book> books = _context.Books.Include(b=>b.Author).Include(b=>b.Categories).ThenInclude(b=>b.Category);
+            
+            var skip = int.Parse(Request.Form["start"]);
+            
+            var take = int.Parse(Request.Form["length"]);
+
+            var sortColumnIndex=Request.Form["order[0][column]"];
+            
+            var sortColumnName =Request.Form[$"columns[{sortColumnIndex}][name]"];  
+
+            var sortColumnDir = Request.Form["order[0][dir]"];
+
+            var searchValue = Request.Form["search[value]"];
+            if(!string.IsNullOrEmpty(searchValue))
+                books=books.Where(b=>b.Title.Contains(searchValue)||b.Author.Name.Contains(searchValue));
+            
+
+            books = books.OrderBy(($"{sortColumnName} {sortColumnDir}"));
+
+
+            var data = books.Skip(skip).Take(take).ToList();
+
+            var mappedData=mapper.Map<IEnumerable<BookDetailsVM>>(data);
+            var recordesTotal = books.Count();
+            var recordsFiltered = recordesTotal;
+            return Ok(new { recordesTotal = recordesTotal, recordsFiltered = recordsFiltered, data = mappedData }); 
+            
+        }
         public IActionResult Details(int id)
         {
-            //بص احنا عاوزين الريسبونس الراجع يكون عبارة عن شوية تفاصيل عن الكتاب تعالي نحددهم سواا عشان نعرف هنعمل الفيو موديل ازيي
-            //CreatedOn -->اتكريت امتي 
-            //IsDeleted --> موجو ف الداتا بيز ولا لا 
-            //Categories --> اسامي الكاتيجرز اللي الكتاب بيندرج تحتها
-            //Description --> وصف الكتاب 
-            //IsAvailableForRental -->متوفر للاستعارة ولا لا
-            //Hall --> القاعة
-            //imageThumbnailUrl --> محتاجين نعرض الثامنيل
-            //ImageUrl -->محتاجبن الصورة الاصلية
-            //PublishingDate --> اتنشر امتني 
-            //Publisher -->مين اللي نشره
-            //AuthorsName --> مين اللي الفه
-            //Title --> عنوان الكتاب
-            //Id -->الاي دي بتاع الكتاب عشان هنعمل زارا ايديت لو اليوزر حب يعدل نبعت الاي دي 
-            //هتروح تعمل فيو موديل يشيل الداتا دي 
-
-            //    public class BookDetailsVM
-            //{
-            //    public int Id { get; set; }
-
-            //    public string Title { get; set; }
-            //    public string AuthorsName { get; set; }
-
-            //    public string Publisher { get; set; }
-            //    public DateTime PublishingDate { get; set; }
-
-            //    public string? ImageUrl { get; set; }
-            //    public string? imageThumbnailUrl { get; set; }
 
 
-            //    public string Hall { get; set; }
-
-            //    public bool IsAvailableForRental { get; set; }
-
-            //    public string Description { get; set; }
-
-            //    public IEnumerable<string> Categories { get; set; } = null;
-
-            //    public bool IsDeleted { get; set; }
-            //    public DateTime CreatedOn { get; set; }
-
-
-            //}
-
-            var book =_context.Books
-                .Include(b=>b.Author) //عشان محتاجين نعرف اسم المؤلف Author عملنا انكلود ل تيبل ال 
-                .Include(b=>b.Categories) //BookCategory نفسه من جوا التيبل الوسيط اللي اسمه Categories عشان تأكسس تيبل ال  ThenInclude ف محتاج تعمل  public ICollection<BookCategory> Categories { get; set; } اللي هي عبارة عن Categories عملنا انكلود لل
-                .ThenInclude(b=>b.Category)//Categories اللي هي جوا مويدل الكتاب يجيب من جواها تيبل ال BookCategory كدا هيروح يفتخ 
-                .FirstOrDefault(b=>b.Id== id);
+            var book = _context.Books
+                .Include(b => b.Author)
+                .Include(b=>b.BookCopies)
+                .Include(b => b.Categories)
+                .ThenInclude(b => b.Category)
+                .FirstOrDefault(b => b.Id == id);
 
             if (book is null) return NotFound();
 
-            //BookDetailsVM.cs ل Book لو لقينا الكتاب محتاجين نعمل ماب من ال
-            //CreateMap<Book, BookDetailsVM>(); ف هنروح نعمل ف الاوتو مابر
-            var bookmodel=mapper.Map<BookDetailsVM>(book);
 
-            //ولكن خلي بالك فيه حاجات هتحتاج تمابها ب ايدك او تعرف الاوتو مابر ان البروبيرتي ف السورس هتروح للبروبيرتي دي ف الدينستيشن 
-            //الاول تعالي نشوف ايه اللي لازم تعمله مانيوال مابينج
-            //Athor اسم الاوثر لام عندك ف الفيو موديل نوعه استرينج ودا طبيعي لانك مش محتاج تعرف عنه حاجه غير اسمه وفي الكتاب نوعه اوبجيكت من
-            //BookCategory تاني حاجه اسامي الكاتيجرز لانها ف الفيو موديل من نوع ليست اوف استرينج ودا طبيعي برضه لانك مش محتاج تعرف حاجه عن الكاتيجرز غير اساميها وتعرضها وخلاص وفي الكتاب موجودة بنوع اوبجكت من 
+            var bookmodel = mapper.Map<BookDetailsVM>(book);
 
-            //لو هتعمل مانيوال ماب
+
             bookmodel.AuthorsName = book.Author.Name;
-            bookmodel.Categories=book.Categories.Select(c=>c.Category.Name).ToList(); //c=>c.Category.Name ومن جواه اخترانا  BookCategory اللي من نوع Categories روحنا فتحنا من جوا البوك التيبل اللي اسمه
-             //ولكن الافضل طبعا تعمله جوا الاوتو مابر عشان تقلل كود جوا الكونترلر ك الاتي 
-            //CreateMap<Book, BookDetailsVM>()
-            //   .ForMember(dest => dest.AuthorsName, opt => opt.MapFrom(opt => opt.Author.Name))
-            //   .ForMember(dest => dest.Categories, opt => opt.MapFrom(opt => opt.Categories.Select(c => c.Category.Name).ToList));
-            //بس يملعم انت كدا جهزت الفيو موديل اللي عاوزين نعرضه ف الريسبونس 
-            //بتعرضلنا الفيو موديل دا  html الريسبونس هنا هيكون عبارة عن فيو او صفحة
+            bookmodel.Categories = book.Categories.Select(c => c.Category.Name).ToList();
+
             return View(bookmodel);
 
-            //الفيو داتا اللي بتكون جوا الفيو دي مسؤولة عن عرض التايتل فوق ف التابة بتاع البراوزر مش ااكتر يعني هنا خلينا اسم تابة البروازر ب اسم الكتاب 
-            //@{
-            //    ViewData["Title"] = Model.Title;
-            //}
+
         }
         [HttpGet]
         public IActionResult Create()
@@ -323,11 +337,8 @@ namespace Bookify.Web.Controllers
             _context.Books.Add(book);
             _context.SaveChanges();
 
-            //بعد ما الاند يوزر يعمل سبميت للكتاب عاوزين نوديه لصفحة تعرض تفاصيل الكتاب يعني صورة الكتاب متوفر ولا لا ينفع استعيره ولا لا وكدا
-            //ف فكر براحه انت عاوز تبعت ريكوست لكنترولر عن طريق الاي دي بتاع الكتاب عشان يعرض تفاصيلة 
-            //وعاوز الريسبونس يكون عبارة عن تفاصيل الكتاب 
-            //ف روح اعمل اكشن بيستقبل الاي دي وبيعرض تفاصيل الكتاب 
-            return RedirectToAction(nameof(Details), new { id = book.Id });  //عندك هنا اوفر لود بياخد اتنين باراميتر اول برارميتر اسم الاكشن اللي عاوز تروحله تاني براميتر انونيمس تايب ابعت جواه الداتا اللي عاوز تبعتها مع الريكوست احنا هنا عاوزين نبعت الاي دي  بتاع الكتاب اللي اتكريت
+
+            return RedirectToAction(nameof(Details), new { id = book.Id });
         }
 
 
@@ -454,6 +465,19 @@ namespace Bookify.Web.Controllers
 
             var res = $"{parts[0]}{seperator}c_thumb,g_face,w_200,h_200/{parts[1]}";
             return res;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleStatus(int id)
+        {
+            var book = _context.Books.FirstOrDefault(x => x.Id == id);
+            if (book == null)
+                return NotFound();
+            book.IsDeleted = !book.IsDeleted;
+            book.LastUpdatedOn = DateTime.Now;
+            _context.SaveChanges();
+            return Ok(book.LastUpdatedOn.ToString());
         }
     }
 }
@@ -662,6 +686,8 @@ namespace Bookify.Web.Core.Mapping
                 .ForMember(dest => dest.AuthorsName, opt => opt.MapFrom(opt => opt.Author.Name))
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(opt => opt.Categories.Select(c => c.Category.Name).ToList()));
 
+            CreateMap<BookCopy, BookCopyVM>()
+                .ForMember(dest => dest.BookTilte, opt => opt.MapFrom(opt => opt.Book.Title));
         }
     }
 }\n
@@ -724,6 +750,7 @@ namespace Bookify.Web.Core.Models
 
    
         public ICollection<BookCategory> Categories { get; set; } = new List<BookCategory>();
+        public ICollection<BookCopy> BookCopies { get; set; } = new List<BookCopy>();
 
 
     }
@@ -739,6 +766,33 @@ namespace Bookify.Web.Core.Models
         public int CategoryId { get; set; }
         public Category Category { get; set; }
 
+    }
+}
+\n
+=== FILE: ./Bookify.Web/Core/Models/BookCopy.cs
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Bookify.Web.Core.Models
+{
+    public class BookCopy : BaseModel
+    {
+        public int Id { get; set; }
+
+        [ForeignKey("Book")]
+        public int BookId { get; set; }
+        public Book? Book { get; set; }
+
+        public bool IsAvailableForRental { get; set; }
+        public int EditionNumber { get; set; }
+        public int SerialNumber { get; set; }
+
+        //هنا عملنا سريال نمبر ودا بيكون يونيك لكل نسخة مستحيل يتكرر هدفة البزنس مش زي الاي دي يعني مينفعش هنا نقول طلما السريال يونيك ف نستغني عن الاي دي ونكتفي ب السريال \
+        //دا غلط لان كل واحج ليه دوره الاي دي دوره بناء العلافات ببين التيبلز وبعضها لانه بيكون رقم صغير بيبدأ من واحد وف المستقبل مستحيل تفكر انك تغير الاي ديز بتاعة اي ريكورد او تيبل ف الداتا بيز
+        //اما السريال وظيفته البزنس والعالم الحقيقي والجرد يعني زي ب الضبط ف الموبايلات كل شركة موبايلات بتعمل الاف النسخ من الموبايل الواحد بس مستحيل تلاقي موبايللين ليهم نفس السريلا نمبر وفي نفس الوقت ليه استخدام مهم جدا 
+        //وهوا ان لو الموبايل بتاعك اتسرق ف الشركة تقدر تتبع الموبايل بتاعك عن طريق السريال نمبر لانه بونيك ف هدف السريال هدف العاالم الحقيقي مش مجرد رقم بنربط بيه الجداول ببعضها 
+        //دا غير ان ف المستقبل الشركة ممكن تعوز تغير صيعة السريال نمبر بدل ما كان ارقام بس لا عاوزين نزود عليه شوبة حروف ف لو انت كنت مخليه يشتغل وظيفة البرايمري كي كنت هتروح تغير الفورين كي بتاع كل التيبلز اللي ليها علاقة ب السريال نمبر دا 
+        //ف لزم الاتنين يكونوا موجودين
+        //تعالي بقا نشوف ازاي هنطبق السريال نمبر جوا الداتا بيز
     }
 }
 \n
@@ -779,6 +833,27 @@ namespace Bookify.Web.Core.ViewModel
     }
 }
 \n
+=== FILE: ./Bookify.Web/Core/ViewModel/BookCopyVM.cs
+﻿using Bookify.Web.Core.Models;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Bookify.Web.Core.ViewModel
+{
+    public class BookCopyVM
+    {
+        public int Id { get; set; }
+
+        public string? BookTilte { get; set; }
+
+        public bool IsAvailableForRental { get; set; }
+        public int EditionNumber { get; set; }
+        public int SerialNumber { get; set; }
+        public bool IsDeleted { get; set; }
+
+        public DateTime CreatedOn { get; set; } = DateTime.Now;
+    }
+}
+\n
 === FILE: ./Bookify.Web/Core/ViewModel/BookDetailsVM.cs
 ﻿using Bookify.Web.Core.Models;
 
@@ -805,6 +880,7 @@ namespace Bookify.Web.Core.ViewModel
         public string Description { get; set; }
 
         public IEnumerable<string> Categories { get; set; } = null; 
+        public IEnumerable<BookCopy> BookCopies { get; set; } = null; 
         
         public bool IsDeleted { get; set; }
         public DateTime CreatedOn { get; set; }
@@ -935,6 +1011,7 @@ namespace Bookify.Web.Core.ViewModel
 ﻿using Bookify.Web.Core.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Bookify.Web.Data
 {
@@ -949,11 +1026,39 @@ namespace Bookify.Web.Data
         public DbSet<Book> Books { get; set; }
         public DbSet<BookCategory> BookCategories { get; set; }
         public DbSet<Authors> Authors { get; set; }
+        public DbSet<BookCopy> BookCopies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
+            //هنكريت دلوقتي السكونس 
+            //مبدائا السكونس دا عبارة عن رقم انتيجر وهنا هنخليه جلوبال ع مستوي الداتا بيز يعني اي تيبل ف اي سكيما يقدر يستخدمه
+            //والسكونس دا مش تيبل دا داتا بيز اوبجيكت منفصل يعني مش مرتبط بجدول معين اعتبره اكنه جلوبال فاريبل اي حد يقدر يأكسسه
+            //لا انت ممكن يكون عندك تيبل تاني فيه فواتير مثلا ف انت عاوز لكل فاتورة تحطلها رقم ف ممكن برضه تربط السكونس دا ب الفواتير بدل ما تعمل للفوراتير سكونس لوحدها BookCopy يعني مش هيكون حصري ع تيبل ال 
+            //والاتنين تيبل اللي بيتسخدموا السكونس بيكملوا من اخر حاجه واقف عندها السكونس بمعني 
+            //ان مثلا لو السريال نمبر بتاع البوك كوبي اخر حاجه كان واقف عند 100005 ف الفاتورة لو جات تاخد سكونس هتبدأ من عند 100006
+            //ف هوا شيرد ع مستوي الداتا بيز
+            builder.HasSequence<int>("SerialNumber", schema: "shared").StartsAt(100001).IncrementsBy(1); //.IncrementsBy(1); وخليه يبدأ العد من مليون وواحد وفي كل مرة زود واحد وهوا باي ديفولت اصلا بيزود واحد ف ملوش لزوم تحط الفانشكن دي  shared وحطه ف اسكيما سمها SerialNumber هنا بنقوله اعملنا سكونس نوعه انتيجر سميي الفاريبل او السكونس دا     
+            //كدا كريتنا السكونس 
+            //قيمتها هتتاخد باي ديفولت من السكوال يعني السي شارب ملهاش دعووة انها تأسين القيمة دي يعني ف كل مرة اليوزر هيعمل سيف ل بوك كوبي السكوال هوا المسؤول انه يدي قيمة للسريال نميبر BookCopy اللي ف تيبل ال SerialNumber ان الفاليو بتاع البروبيرتي اللي اسمها  efCore عاوزين بقا نعرف السي شارب او ال 
+            //.HasDefaultValueSql() ولكن دي السي شارب هي اللي مسؤوله تديه طيب لو عاوز ادي قيمة ديفولت من جوا السكوال نفسه هقوله .HasDefaultValue() كنت بتقوله  efcore لو تفتكر عشان كنت تدي قيمة ديفولت لبربيرتي ب ال 
+            builder.Entity<BookCopy>().Property(e => e.SerialNumber).HasDefaultValueSql("NEXT VALUE FOR shared.SerialNumber");
+            //.HasDefaultValueSql("NEXT VALUE FOR shared.SerialNumber"); -->dbo هات بقا النتيكست فاليو بتاعتها يعين شوف هي واقفه اخر حاجه فين وزود عليها وحطها ديفولت فاليو للسريال نمبر لو مكنتش اديته اسم الاسكيما قبل المتغير كان هيروح يدور ف الديفولت اسكيما اللي هي   \ shared اللي موجود جوا الاسكيما اللي اسمها   SerialNumber اللي مكتوب جوا دا سكوال مش سي شارب بتقوله روح هات المتغير اللي اسمه
+            //بس كدا يمعلم عملنا كريتنا السكونس وربطنا التيبل بتاع البوك كوبي بيه ولو عاوز تربط اي تيبل بنفس السكونس هتشتغل بنفس الطريقة برضه
+
+            //اهو دا شكلها جوا المايجريشن 
+            //migrationBuilder.CreateSequence<int>(
+            //    name: "SerialNumber",
+            //    schema: "shared",
+            //    startValue: 100001L);
+            //اي سكونس بيتكريت ف الداتا بيز بيتحط ف المكان دا 
+            //بتخس ع الداتا بيز 
+            //بعدين 
+            //Programmability/Sequences/SerialNumber
+
             base.OnModelCreating(builder);
             builder.Entity<BookCategory>().HasKey(x => new { x.CategoryId, x.BookId });
+
+
         }
 
     }
@@ -4083,13 +4188,80 @@ namespace Bookify.Web.Data.Migrations
     }
 }
 \n
-=== FILE: ./Bookify.Web/Data/Migrations/ApplicationDbContextModelSnapshot.cs
+=== FILE: ./Bookify.Web/Data/Migrations/20260709080604_AddBookCopiesTAble.cs
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Bookify.Web.Data.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddBookCopiesTAble : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.EnsureSchema(
+                name: "shared");
+
+            migrationBuilder.CreateSequence<int>(
+                name: "SerialNumber",
+                schema: "shared",
+                startValue: 100001L);
+
+            migrationBuilder.CreateTable(
+                name: "BookCopies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BookId = table.Column<int>(type: "int", nullable: false),
+                    IsAvailableForRental = table.Column<bool>(type: "bit", nullable: false),
+                    EditionNumber = table.Column<int>(type: "int", nullable: false),
+                    SerialNumber = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR shared.SerialNumber"),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUpdatedOn = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BookCopies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BookCopies_Books_BookId",
+                        column: x => x.BookId,
+                        principalTable: "Books",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookCopies_BookId",
+                table: "BookCopies",
+                column: "BookId");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "BookCopies");
+
+            migrationBuilder.DropSequence(
+                name: "SerialNumber",
+                schema: "shared");
+        }
+    }
+}
+\n
+=== FILE: ./Bookify.Web/Data/Migrations/20260709080604_AddBookCopiesTAble.Designer.cs
 ﻿// <auto-generated />
 using System;
 using Bookify.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -4097,9 +4269,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookify.Web.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709080604_AddBookCopiesTAble")]
+    partial class AddBookCopiesTAble
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4107,6 +4281,9 @@ namespace Bookify.Web.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.HasSequence<int>("SerialNumber", "shared")
+                .StartsAt(100001L);
 
             modelBuilder.Entity("Bookify.Web.Core.Models.Authors", b =>
                 {
@@ -4214,6 +4391,44 @@ namespace Bookify.Web.Data.Migrations
                     b.HasIndex("BookId");
 
                     b.ToTable("BookCategories");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCopy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EditionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailableForRental")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SerialNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("NEXT VALUE FOR shared.SerialNumber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookCopies");
                 });
 
             modelBuilder.Entity("Bookify.Web.Core.Models.Category", b =>
@@ -4478,6 +4693,17 @@ namespace Bookify.Web.Data.Migrations
                     b.Navigation("book");
                 });
 
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCopy", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Book", "Book")
+                        .WithMany()
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -4531,6 +4757,1061 @@ namespace Bookify.Web.Data.Migrations
 
             modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
                 {
+                    b.Navigation("Categories");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Category", b =>
+                {
+                    b.Navigation("Books");
+                });
+#pragma warning restore 612, 618
+        }
+    }
+}
+\n
+=== FILE: ./Bookify.Web/Data/Migrations/20260709082057_AddBookCopiesNavigationPropertyToBook.cs
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Bookify.Web.Data.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddBookCopiesNavigationPropertyToBook : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+
+        }
+    }
+}
+\n
+=== FILE: ./Bookify.Web/Data/Migrations/20260709082057_AddBookCopiesNavigationPropertyToBook.Designer.cs
+﻿// <auto-generated />
+using System;
+using Bookify.Web.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+#nullable disable
+
+namespace Bookify.Web.Data.Migrations
+{
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260709082057_AddBookCopiesNavigationPropertyToBook")]
+    partial class AddBookCopiesNavigationPropertyToBook
+    {
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        {
+#pragma warning disable 612, 618
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.19")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.HasSequence<int>("SerialNumber", "shared")
+                .StartsAt(100001L);
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Authors", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Authors");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorsId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Hall")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAvailableForRental")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Publisher")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("PublishingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("imagePublicId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("imageThumbnailUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorsId");
+
+                    b.HasIndex("Title", "AuthorsId")
+                        .IsUnique();
+
+                    b.ToTable("Books");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCategory", b =>
+                {
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CategoryId", "BookId");
+
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookCategories");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCopy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EditionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailableForRental")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SerialNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("NEXT VALUE FOR shared.SerialNumber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookCopies");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LoginProvider")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Authors", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCategory", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Book", "book")
+                        .WithMany("Categories")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Bookify.Web.Core.Models.Category", "Category")
+                        .WithMany("Books")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("book");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCopy", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Book", "Book")
+                        .WithMany("BookCopies")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
+                {
+                    b.Navigation("BookCopies");
+
+                    b.Navigation("Categories");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Category", b =>
+                {
+                    b.Navigation("Books");
+                });
+#pragma warning restore 612, 618
+        }
+    }
+}
+\n
+=== FILE: ./Bookify.Web/Data/Migrations/ApplicationDbContextModelSnapshot.cs
+﻿// <auto-generated />
+using System;
+using Bookify.Web.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+#nullable disable
+
+namespace Bookify.Web.Data.Migrations
+{
+    [DbContext(typeof(ApplicationDbContext))]
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    {
+        protected override void BuildModel(ModelBuilder modelBuilder)
+        {
+#pragma warning disable 612, 618
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.19")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.HasSequence<int>("SerialNumber", "shared")
+                .StartsAt(100001L);
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Authors", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Authors");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorsId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Hall")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAvailableForRental")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Publisher")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("PublishingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("imagePublicId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("imageThumbnailUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorsId");
+
+                    b.HasIndex("Title", "AuthorsId")
+                        .IsUnique();
+
+                    b.ToTable("Books");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCategory", b =>
+                {
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CategoryId", "BookId");
+
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookCategories");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCopy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EditionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailableForRental")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SerialNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("NEXT VALUE FOR shared.SerialNumber");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.ToTable("BookCopies");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastUpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LoginProvider")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Authors", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCategory", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Book", "book")
+                        .WithMany("Categories")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Bookify.Web.Core.Models.Category", "Category")
+                        .WithMany("Books")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("book");
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.BookCopy", b =>
+                {
+                    b.HasOne("Bookify.Web.Core.Models.Book", "Book")
+                        .WithMany("BookCopies")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Bookify.Web.Core.Models.Book", b =>
+                {
+                    b.Navigation("BookCopies");
+
                     b.Navigation("Categories");
                 });
 
@@ -4647,6 +5928,10 @@ namespace Bookify.Web.Helpers
     {
       "library": "expressive-annotations-validate@2.7.0",
       "destination": "wwwroot/lib/expressive-annotations-validate/"
+    },
+    {
+      "library": "fslightbox@3.7.4",
+      "destination": "wwwroot/fslightbox/"
     }
   ]
 }\n
@@ -4790,12 +6075,8 @@ namespace Bookify.Web
 
 @section Styles {
     <link href="~/assets/plugins/datatables/datatables.bundle.css" rel="stylesheet" />
-    <style>
-        .dt-buttons {
-            display: none !important;
-        }
-    </style>
 }
+<!--Begin Header-->
 <div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
     <!--begin::Icon-->
     <div class="symbol symbol-40px me-4 mb-5 mb-sm-0">
@@ -4825,6 +6106,7 @@ namespace Bookify.Web
     </div>
     <!--end::Action-->
 </div>
+<!--End Header-->
 
 <div class="card shadow-sm">
     <div class="card-header align-items-center py-5 gap-2 gap-md-5">
@@ -4897,7 +6179,7 @@ namespace Bookify.Web
         else
         {
             <div class="table-responsive">
-                <table class="table table-row-dashed table-row-gray-300 gy-7 table">
+                <table id="table-js" class="table-row-dashed table-row-gray-300 gy-7 table">
                     <thead>
                         <tr class="fw-bold fs-6 text-gray-800">
                             <th>Name</th>
@@ -4920,9 +6202,7 @@ namespace Bookify.Web
 </div>
 
 @section Plugins {
-
     <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
-
 }
 
 @section Scripts
@@ -4986,8 +6266,8 @@ namespace Bookify.Web
                 </div>
                 <div class="menu-item px-3">
                     <a href="javascript:;" class="menu-link px-3 flex-stack js-toggle-status"
-                       data-url="/Authors/ToggleStatus/@Model.Id"
-                       >
+                       data-id="@Model.Id"
+                       data-url="/Authors/ToggleStatus/@Model.Id">
                         Toggle Status
                     </a>
                 </div>
@@ -5083,7 +6363,7 @@ namespace Bookify.Web
                                             <path fill-rule="evenodd" clip-rule="evenodd" d="M14.7857 7.125H6.21429C5.62255 7.125 5.14286 7.6007 5.14286 8.1875V18.8125C5.14286 19.3993 5.62255 19.875 6.21429 19.875H14.7857C15.3774 19.875 15.8571 19.3993 15.8571 18.8125V8.1875C15.8571 7.6007 15.3774 7.125 14.7857 7.125ZM6.21429 5C4.43908 5 3 6.42709 3 8.1875V18.8125C3 20.5729 4.43909 22 6.21429 22H14.7857C16.5609 22 18 20.5729 18 18.8125V8.1875C18 6.42709 16.5609 5 14.7857 5H6.21429Z" fill="currentColor" />
                                         </svg>
                                     </span>
-                                    <div class="fs-7 fw-bold" data-kt-countup="true" data-kt-countup-value="7">0</div>
+                                    <div class="fs-7 fw-bold" data-kt-countup="true" data-kt-countup-value="@Model.BookCopies.Count()">0</div>
                                 </div>
                                 <div class="fw-semibold fs-6 text-gray-400">Copies</div>
                             </div>
@@ -5124,7 +6404,71 @@ namespace Bookify.Web
                 <div class="card-title fs-3 fw-bold">Copies</div>
             </div>
             <div class="card-body">
-                Copies
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col">Serial Number</th>
+                            <th scope="col">Edition</th>
+                            <th scope="col">Rental</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Created On</th>
+                            <th scope="col text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.BookCopies)
+                        {
+                            <tr>
+                                <th>@c.SerialNumber</th>
+                                <th>@c.EditionNumber</th>
+                                <th>
+                                    <span class="badge badge-light-@(c.IsAvailableForRental?"success":"warning") js-status">
+                                        @(c.IsAvailableForRental? "Available" : "Not Available")
+                                    </span>
+                                </th>
+                                <td>
+                                    <span class="badge badge-light-@(c.IsDeleted?"danger":"success") js-status">
+                                        @(c.IsDeleted? "Deleted" : "Available")
+                                    </span>
+                                </td>
+                                <td>
+                                    @c.CreatedOn.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button type="button" class="btn btn-sm btn-light btn-active-light-primary btn-icon"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots fs-3"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-150px py-3">
+                                            <div class="menu-item px-3">
+                                                <a herf="javascript:;"
+                                                   data-title="Edit Author"
+                                                   data-url="/BookCopies/Edit/@c.Id"
+                                                   data-update="true"
+                                                   class="menu-link px-3 js-render-c">
+                                                    <span class="menu-icon"><i class="bi bi-pencil-square"></i></span>
+                                                    Edit
+                                                </a>
+                                            </div>
+                                            <div class="menu-item px-3">
+                                                <a href="javascript:;" class="menu-link px-3 flex-stack js-toggle-status"
+                                                   data-id="@c.Id"
+                                                   data-url="/BookCopies/ToggleStatus/@c.Id">
+                                                    Toggle Status
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        }
+                    </tbody>
+                </table>
+
+
+
             </div>
         </div>
     </div>
@@ -5284,12 +6628,129 @@ namespace Bookify.Web
     <partial name="_ValidationScriptsPartial" />
 }\n
 === FILE: ./Bookify.Web/Views/Books/Index.cshtml
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
+    ViewData["Title"] = "Books";
 }
-\n
+
+@section Styles {
+    <link href="~/assets/plugins/datatables/datatables.bundle.css" rel="stylesheet" />
+    <style>
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+    </style>
+}
+
+<div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
+    <div class="symbol symbol-40px me-4 mb-5 mb-sm-0">
+        <div class="symbol-label fs-2 fw-semibold text-success">
+            <span class="svg-icon svg-icon-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-books" viewBox="0 0 16 16">
+                    <path d="M8 3.5v11M8 14.5c-1.5-1.2-4.5-1.5-6.5-.5V2.5c2-.9 5-.7 6.5.7M8 14.5c1.5-1.2 4.5-1.5 6.5-.5V2.5c-2-.9-5-.7-6.5.7"
+                          stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                    <path d="M2.5 4.5v7.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" opacity="0.7" />
+                    <path d="M13.5 4.5v7.5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" opacity="0.7" />
+                </svg>
+            </span>
+        </div>
+    </div>
+    <div class="d-flex flex-column pe-0 pe-sm-10">
+        <h4 class="fw-bold text-primary mb-0">Books</h4>
+    </div>
+    <div class="ms-sm-auto">
+        <a asp-action="Create" asp-controller="Books" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-square-dotted"></i> Add
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-5">
+    @* Begin header of table (search field and Export ) *@
+    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+        <div class="card-title">
+            <div class="d-flex align-items-center position-relative my-1">
+                <span class="svg-icon svg-icon-1 position-absolute ms-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect opacity="0.5" x="17.0365" y="15.1223" width="8.15546" height="2" rx="1" transform="rotate(45 17.0365 15.1223)" fill="currentColor"></rect>
+                        <path d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z" fill="currentColor"></path>
+                    </svg>
+                </span>
+                <input type="text" id="kt_filter_search" data-kt-filter="search" class="form-control form-control-solid w-250px ps-14" placeholder="Search..." />
+            </div>
+            <div id="kt_datatable_example_1_export" class="d-none"></div>
+        </div>
+        <div class="card-toolbar flex-row-fluid justify-content-end gap-5">
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
+                <span class="svg-icon svg-icon-2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect opacity="0.3" width="12" height="2" rx="1" transform="matrix(0 -1 -1 0 12.75 19.75)" fill="currentColor"></rect>
+                        <path d="M12.0573 17.8813L13.5203 16.1256C13.9121 15.6554 14.6232 15.6232 15.056 16.056C15.4457 16.4457 15.4641 17.0716 15.0979 17.4836L12.4974 20.40922 12.0996 20.8567 11.4004 20.8567 11.0026 20.4092L8.40206 17.4836C8.0359 17.0716 8.0543 16.4457 8.44401 16.056C8.87683 15.6232 9.58785 15.6554 9.9797 16.1256L11.4427 17.8813C11.6026 18.0732 11.8974 18.0732 12.0573 17.8813Z" fill="currentColor"></path>
+                        <path opacity="0.3" d="M18.75 15.75H17.75C17.1977 15.75 16.75 15.3023 16.75 14.75C16.75 14.1977 17.1977 13.75 17.75 13.75C18.3023 13.75 18.75 13.3023 18.75 12.75V5.75C18.75 5.19771 18.3023 4.75 17.75 4.75L5.75 4.75C5.19772 4.75 4.75 5.19771 4.75 5.75V12.75C4.75 13.3023 5.19771 13.75 5.75 13.75C6.30229 13.75 6.75 14.1977 6.75 14.75C6.75 15.3023 6.30229 15.75 5.75 15.75H4.75C3.64543 15.75 2.75 14.8546 2.75 13.75V4.75C2.75 3.64543 3.64543 2.75 4.75 2.75L18.75 2.75C19.8546 2.75 20.75 3.64543 20.75 4.75V13.75C20.75 14.8546 19.8546 15.75 18.75 15.75Z" fill="currentColor"></path>
+                    </svg>
+                </span>
+                Export
+            </button>
+            <div id="kt_datatable_example_export_menu" class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px py-4" data-kt-menu="true">
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="copy">
+                        Copy to clipboard
+                    </a>
+                </div>
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="csv">
+                        Export as CSV
+                    </a>
+                </div>
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    @* end header of table (search field and Export ) *@
+
+    <div class="card-body py-4">
+        @* begin define the table *@
+        <div class="table-responsive">
+            <table id="BooksTable" class="table table-row-dashed table-row-gray-300 gy-4 align-middle">
+                <thead>
+                    <tr class="fw-bold fs-6 text-gray-800">
+                        <th></th>
+                        <th class="ps-2">Book</th>
+                        <th class="ps-2">Publisher</th>
+                        <th class="ps-2">Publishing Date</th>
+                        <th class="ps-2">Hall</th>
+                        <th class="ps-2">Categories</th>
+                        <th class="ps-2">Rental</th>
+                        <th class="ps-2">Status</th>
+                        <th class="ps-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* Books will be rendered here *@
+                </tbody>
+            </table>
+        </div>
+        @* end define the table *@
+    </div>
+</div>
+@*@Html.AntiForgeryToken()*@
+@section Plugins {
+    <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
+}
+@section Scripts
+{
+    <script src="~/js/BookIndex.js" asp-append-version="true"></script>
+}\n
 === FILE: ./Bookify.Web/Views/Categories/Index.cshtml
 ﻿@model IEnumerable<CategoryVM>
 
@@ -5299,11 +6760,6 @@ namespace Bookify.Web
 
 @section Styles {
     <link href="~/assets/plugins/datatables/datatables.bundle.css" rel="stylesheet" />
-    <style>
-        .dt-buttons {
-            display: none !important;
-        }
-    </style>
 }
 <div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
     <!--begin::Icon-->
@@ -5406,7 +6862,7 @@ namespace Bookify.Web
         else
         {
             <div class="table-responsive">
-                <table class="table table-row-dashed table-row-gray-300 gy-7 table">
+                <table id="table-js" class="table-row-dashed table-row-gray-300 gy-7 table">
                     <thead>
                         <tr class="fw-bold fs-6 text-gray-800">
                             <th>Name</th>
@@ -5427,11 +6883,8 @@ namespace Bookify.Web
         }
     </div>
 </div>
-
 @section Plugins {
-
     <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
-
 }
 
 @section Scripts
@@ -5607,7 +7060,7 @@ namespace Bookify.Web
                         <span class="menu-title">Authors</span>
                     </a>
 
-                    <a class="menu-link " asp-controller="Books" asp-action="Create" active-when="Books">
+                    <a class="menu-link " asp-controller="Books" asp-action="Index" active-when="Books">
                         <span class="menu-icon">
                             <!--begin::Svg Icon | path: icons/duotune/general/gen002.svg-->
                             <span class="svg-icon svg-icon-2">
@@ -5846,7 +7299,7 @@ namespace Bookify.Web
     <link rel="stylesheet" href="~/lib/animate.css/animate.min.css" />
     @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/lib/toastr.js/toastr.css" />
-    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.css/sweetalert2.min.css" />
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Bookify.Web.styles.css" asp-append-version="true" />
 </head>
@@ -5906,12 +7359,16 @@ namespace Bookify.Web
     <!--begin::Global Javascript Bundle(used by all pages)-->
     <script src="~/assets/js/plugins.bundle.js"></script>
     <script src="~/assets/js/scripts.bundle.js"></script>
-    @*<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ajax-unobtrusive/3.2.6/jquery.unobtrusive-ajax.min.js"></script>*@    <!--end::Global Javascript Bundle-->
+
     <script src="~/lib/bootbox.js/bootbox.min.js"></script>
-    <script src="~/lib/sweetalert2/sweetalert2.js/sweetalert2.min.js"></script>
     <script src="~/lib/toastr.js/toastr.min.js"></script>
+
     @await RenderSectionAsync("Plugins", required: false)
+
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script src="~/fslightbox/index.min.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

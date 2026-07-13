@@ -1,0 +1,45 @@
+﻿@model BookCopyVM
+<tr>
+    <th>@Model.SerialNumber</th>
+    <th>@Model.EditionNumber</th>
+    <th>
+        <span class="badge badge-light-@(Model.IsAvailableForRental?"success":"warning") ">
+            @(Model.IsAvailableForRental? "Available" : "Not Available")
+        </span>
+    </th>
+    <td>
+        <span class="badge badge-light-@(Model.IsDeleted?"danger":"success") js-status">
+            @(Model.IsDeleted? "Deleted" : "Available")
+        </span>
+    </td>
+    <td>
+        @Model.CreatedOn.ToString("dd/MM/yyyy")
+    </td>
+    <td>
+        <div class="dropdown">
+            <button type="button" class="btn btn-sm btn-light btn-active-light-primary btn-icon"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-three-dots fs-3"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end fw-semibold w-150px py-3">
+                <div class="menu-item px-3">
+                    <a href="javascript:;"
+                       data-title="Edit Author"
+                       data-url="/BookCopies/Edit/@Model.Id"
+                       data-update="true"
+                       class="menu-link px-3 js-render-model">
+                        <span class="menu-icon"><i class="bi bi-pencil-square"></i></span>
+                        Edit
+                    </a>
+                </div>
+                <div class="menu-item px-3">
+                    <a href="javascript:;" class="menu-link px-3 flex-stack js-toggle-status"
+                       data-id="@Model.Id"
+                       data-url="/BookCopies/ToggleStatus/@Model.Id">
+                        Toggle Status
+                    </a>
+                </div>
+            </div>
+        </div>
+    </td>
+</tr>

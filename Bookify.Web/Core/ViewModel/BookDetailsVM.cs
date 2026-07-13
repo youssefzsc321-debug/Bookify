@@ -23,6 +23,7 @@ namespace Bookify.Web.Core.ViewModel
         public string Description { get; set; }
 
         public IEnumerable<string> Categories { get; set; } = null; 
+        public IEnumerable<BookCopyVM> BookCopies { get; set; } = null; 
         
         public bool IsDeleted { get; set; }
         public DateTime CreatedOn { get; set; }

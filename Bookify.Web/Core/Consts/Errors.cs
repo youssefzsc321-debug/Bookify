@@ -9,6 +9,7 @@
         public const string TitleWithTheSameAuthor = "Title With The Same Author is alerady exist";
         public const string AuthorWithTheSameTitle = "Author With The Same Title is alerady exist";
         public const string NotAllowFuteruData = "Date cannot be in the future!";
+        public const string NotAllowedRange = "The values must between {1} and {2}";
 
     }
 }

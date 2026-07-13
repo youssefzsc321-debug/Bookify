@@ -89,66 +89,81 @@ $(document).ready(function () {
     $('.js-select2').on('change', function () {
         $(this).valid();
     });
-    $.validator.setDefaults({
-        ignore: [], 
-    });
+    if ($.validator) {
+        $.validator.setDefaults({
+            ignore: [],
+        });
+    }
     //Datapicker
     $('.js-datepicker').daterangepicker({
         singleDatePicker: true,
         autoApply: true
 
     });
-    //begin datatables
-    var table = $('#table-js').DataTable({
-        "info": false,
-        "searchDelay": 0,
-        'order': [],
-        'pageLength': 10,
 
-        dom:
-            "<'row'<'col-sm-12'tr>>" +
-            "<'row'<'col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start'l>" +
-            "<'col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end'p>>",
-        buttons: [
-            {
-                extend: 'copyHtml5',
-                className: 'd-none',
-                exportOptions: { columns: ':not(.js-no-export)' }
+    //Begin Toggle State
+    $(document).on('click', '.js-toggle-status', function () {
+        var btn = $(this);
+        var url = btn.data('url');
+        var token = $('input[name="__RequestVerificationToken"]').val();
+
+        bootbox.confirm({
+            message: 'Are you sure you want to toggle status?',
+            buttons: {
+                confirm: { label: 'Yes', className: 'btn-success' },
+                cancel: { label: 'No', className: 'btn-danger' }
             },
-            {
-                extend: 'excelHtml5',
-                className: 'd-none',
-                exportOptions: { columns: ':not(.js-no-export)' }
-            },
-            {
-                extend: 'csvHtml5',
-                className: 'd-none',
-                exportOptions: { columns: ':not(.js-no-export)' }
-            },
-            {
-                extend: 'pdfHtml5',
-                className: 'd-none',
-                exportOptions: { columns: ':not(.js-no-export)' }
+            callback: function (result) {
+                if (!result) return;
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        '__RequestVerificationToken': token
+                    },
+                    success: function (lastUpdatedOn) {
+
+                        var row = btn.closest('tr');
+                        var status = row.find('.js-status');
+
+                        if (status.text().trim() === 'Deleted') {
+
+                            status
+                                .text('Available')
+                                .removeClass('badge-light-danger')
+                                .addClass('badge-light-success');
+
+                        } else {
+
+                            status
+                                .text('Deleted')
+                                .removeClass('badge-light-success')
+                                .addClass('badge-light-danger');
+                        }
+
+                        row.find('.js-updated-on').html(lastUpdatedOn);
+
+                        row.addClass('animate__animated animate__flash');
+
+                        row.one('animationend webkitAnimationEnd oAnimationEnd', function () {
+                            row.removeClass('animate__animated animate__flash');
+                        });
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Something went wrong!'
+                        });
+                    }
+                });
             }
-        ]
-    });
-
-    $('[data-kt-filter="search"]').on('input', function () {
-        table.column(0).search($(this).val()).draw();
-    });
-
-    const exportButtons = document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]');
-
-    exportButtons.forEach(exportButton => {
-        exportButton.addEventListener('click', e => {
-            e.preventDefault();
-
-
-            const exportValue = e.target.getAttribute('data-kt-export');
-            table.button('.buttons-' + exportValue).trigger();
         });
     });
-    //end datatables
+    //End Toggle State
+    
+   
 
 
     //begin renderbutton
@@ -179,47 +194,73 @@ $(document).ready(function () {
     //end renderbutton
 
 
-    ///Begin Toggle State
-    $(document).on('click', '.js-toggle-status', function () {
-        var btn = $(this);
-        var url = btn.data('url');
-        var token = $('input[name="__RequestVerificationToken"]').val();
-
-        bootbox.confirm({
-            message: 'Are you sure you want to toggle status?',
-            buttons: {
-                confirm: { label: 'Yes', className: 'btn-success' },
-                cancel: { label: 'No', className: 'btn-danger' }
-            },
-            callback: function (result) {
-                if (!result) return;
-
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: { '__RequestVerificationToken': token },
-                    success: function (lastUpdatedOn) {
-                        var row = btn.closest('tr');
-                        var status = row.find('.js-status');
-                        var isDeleted = status.text().trim() === 'Deleted';
-                        var newStatus = isDeleted ? 'Available' : 'Deleted';
-
-                        status.text(newStatus);
-                        status.toggleClass('badge-light-success badge-light-danger');
-                        row.find('.js-updated-on').html(lastUpdatedOn);
-                        row.addClass('animate__animated animate__flash');
-                    },
-                    error: function (xhr) {
-                        Swal.fire({ icon: 'error', title: 'Oops...', text: 'Something went wrong!' });
-                    }
-                });
-            }
-        });
-    });
-    //end Toggle State
 
 
 
 
 
 });
+//begin datatables
+var table = $('#table-js').DataTable({
+    info: false,
+    searchDelay: 0,
+    order: [],
+    pageLength: 10,
+
+    drawCallback: function () {
+        KTMenu.createInstances();
+    },
+
+    dom:
+        "<'row'<'col-sm-12'tr>>" +
+        "<'row'<'col-sm-12 col-md-5 d-flex align-items-center justify-content-center justify-content-md-start'l>" +
+        "<'col-sm-12 col-md-7 d-flex align-items-center justify-content-center justify-content-md-end'p>>",
+
+    buttons: [
+        {
+            extend: 'copyHtml5',
+            className: 'd-none',
+            exportOptions: {
+                columns: ':not(.js-no-export)'
+            }
+        },
+        {
+            extend: 'excelHtml5',
+            className: 'd-none',
+            exportOptions: {
+                columns: ':not(.js-no-export)'
+            }
+        },
+        {
+            extend: 'csvHtml5',
+            className: 'd-none',
+            exportOptions: {
+                columns: ':not(.js-no-export)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            className: 'd-none',
+            exportOptions: {
+                columns: ':not(.js-no-export)'
+            }
+        }
+    ]
+});
+
+$('[data-kt-filter="search"]').on('input', function () {
+    table.column(0).search($(this).val()).draw();
+});
+
+const exportButtons = document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]');
+
+exportButtons.forEach(exportButton => {
+    exportButton.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const exportValue = this.getAttribute('data-kt-export');
+        table.button('.buttons-' + exportValue).trigger();
+    });
+});
+
+//end datatables
