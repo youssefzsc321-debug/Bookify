@@ -1,11 +1,12 @@
 ﻿using Bookify.Web.Core.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Bookify.Web.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<AppUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -27,6 +28,7 @@ namespace Bookify.Web.Data
             base.OnModelCreating(builder);
             builder.Entity<BookCategory>().HasKey(x => new { x.CategoryId, x.BookId });
 
+          
 
         }
 
