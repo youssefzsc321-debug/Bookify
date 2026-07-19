@@ -177,9 +177,14 @@
 					</div>
 					<!--end::Menu item-->
 					<!--begin::Menu item-->
-					<div class="menu-item px-5">
-						<a href="../../demo14/dist/authentication/layouts/corporate/sign-in.html" class="menu-link px-5">Sign Out</a>
-					</div>
+                    <div class="menu-item px-5">
+                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                            <button type="submit" class="menu-link px-5 border-0 bg-transparent w-100 text-start" style="cursor: pointer; display: block; outline: none;">
+                                Sign Out
+                            </button>
+                        </form>
+                       
+                    </div>
 					<!--end::Menu item-->
 				</div>
 				<!--end::User account menu-->

@@ -124,6 +124,7 @@ $(document).ready(function () {
                     },
                     success: function (lastUpdatedOn) {
 
+
                         var row = btn.closest('tr');
                         var status = row.find('.js-status');
 
@@ -183,6 +184,14 @@ $(document).ready(function () {
             success: function (form) {
                 modal.find('.modal-body').html(form)
                 $.validator.unobtrusive.parse("#ModalForm");
+                var selectElement = modal.find('.js-select2');
+                selectElement.select2({
+                    dropdownParent: modal
+                });
+
+                selectElement.on('change', function () {
+                    $(this).valid(); 
+                });
             },
             error: function () {
                 showErrorMessage()

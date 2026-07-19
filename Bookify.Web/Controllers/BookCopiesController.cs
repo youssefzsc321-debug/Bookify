@@ -1,15 +1,19 @@
 ﻿using AutoMapper;
+using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Differencing;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Numerics;
+using System.Security.Claims;
 using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bookify.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Archive)]
     public class BookCopiesController : Controller
     {
         private readonly ApplicationDbContext context;
@@ -48,10 +52,10 @@ namespace Bookify.Web.Controllers
             {
                 Id = model.Id,
                 EditionNumber = model.EditionNumber,
-                IsAvailableForRental = model.IsAvailableForRental,
+                IsAvailableForRental = model.IsAvailableForRental&&originBook.IsAvailableForRental,
                 BookId = model.BookId,
             };
-
+            copy.CreatedById= User.FindFirst(ClaimTypes.NameIdentifier).Value;
             context.BookCopies.Add(copy);
             context.SaveChanges();
           
@@ -81,8 +85,9 @@ namespace Bookify.Web.Controllers
             var originBook = context.Books.Find(model.BookId);
             if(originBook is null) return NotFound();
             copy.EditionNumber=model.EditionNumber;
-            copy.IsAvailableForRental=model.IsAvailableForRental;
+            copy.IsAvailableForRental=model.IsAvailableForRental&&originBook.IsAvailableForRental;
             copy.LastUpdatedOn=DateTime.Now;
+            copy.LastUpdatedById= User.FindFirst(ClaimTypes.NameIdentifier).Value;
             context.SaveChanges();
             var modelVm=mapper.Map<BookCopyVM>(copy);
             return PartialView("_BookCopyRow", modelVm);
@@ -98,6 +103,7 @@ namespace Bookify.Web.Controllers
             if (copy is null) return NotFound();
             copy.IsDeleted = !copy.IsDeleted;
             copy.LastUpdatedOn = DateTime.Now;
+            copy.LastUpdatedById= User.FindFirst(ClaimTypes.NameIdentifier).Value;
             context.SaveChanges();
             return Ok(copy.LastUpdatedOn.ToString());
 

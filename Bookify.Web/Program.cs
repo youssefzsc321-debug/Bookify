@@ -21,15 +21,27 @@ namespace Bookify.Web
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+
 
             //builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = true)
             //    .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            builder.Services.AddIdentity<AppUser,IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+            builder.Services.AddIdentity<AppUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultUI()
                 .AddDefaultTokenProviders();
+            builder.Services.Configure<IdentityOptions>(options =>
+            {
+                // Default Password settings.
+
+                options.Password.RequireNonAlphanumeric = false;
+
+                options.Password.RequiredLength = 8;
+                options.User.AllowedUserNameCharacters =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+#";
+
+            });
 
             builder.Services.AddControllersWithViews();
 
@@ -60,7 +72,7 @@ namespace Bookify.Web
 
 
             var scopFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
-            using var scope=scopFactory.CreateScope();
+            using var scope = scopFactory.CreateScope();
             var roleManger = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManger = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
             await DefaultRoles.SeedRoles(roleManger);

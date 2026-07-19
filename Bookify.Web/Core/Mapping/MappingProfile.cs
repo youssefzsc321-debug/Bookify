@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Bookify.Web.Core.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookify.Web.Core.Mapping
@@ -35,6 +36,20 @@ namespace Bookify.Web.Core.Mapping
                 .ForMember(dest => dest.BookTilte, opt => opt.MapFrom(opt => opt.Book.Title));
 
             CreateMap<BookCopy, BookCopyForm>();
+
+            CreateMap<AppUser, UserVM>();
+            CreateMap<UserFormVM, AppUser>()
+                .ForMember(dest=>dest.NormalizedEmail,opt=>opt.MapFrom(src=>src.Email.ToUpper()))
+                .ForMember(dest=>dest.NormalizedUserName,opt=>opt.MapFrom(src=>src.UserName.ToUpper()))
+                .ReverseMap();
+
+            //CreateMap<IdentityRole, SelectListItem>()
+            //    .ForMember(dest => dest.Text, opt => opt.MapFrom(src => src.Name))
+            //    .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.Id));
+
+
+
+
         }
     }
 }

@@ -12,16 +12,19 @@ namespace Bookify.Web.Seeds
             {
                 AppUser admin = new AppUser()
                 {
-                    UserName = "admin",
+                    UserName = "admin@bookify.com",
                     Email = "admin@bookify.com",
                     FullName = "Admin",
-                    PasswordHash = "Admin@123",
+                    //PasswordHash = "Admin@123",
                     EmailConfirmed = true,
                 };
 
-                await userManager.CreateAsync(admin, admin.PasswordHash);
+                var res = await userManager.CreateAsync(admin, "Admin@123");
+                if (res.Succeeded)
+                {
 
-                await userManager.AddToRoleAsync(admin, AppRoles.Admin);
+                    await userManager.AddToRoleAsync(admin, AppRoles.Admin);
+                }
             }
         }
     }
