@@ -37,7 +37,10 @@ namespace Bookify.Web.Core.Mapping
 
             CreateMap<BookCopy, BookCopyForm>();
 
-            CreateMap<AppUser, UserVM>();
+            CreateMap<AppUser, UserVM>()
+                .ForMember(dest=>dest.IsLocked,opt=>opt.MapFrom(src=>src.LockoutEnd.HasValue&&src.LockoutEnd > DateTimeOffset.UtcNow));
+
+
             CreateMap<UserFormVM, AppUser>()
                 .ForMember(dest=>dest.NormalizedEmail,opt=>opt.MapFrom(src=>src.Email.ToUpper()))
                 .ForMember(dest=>dest.NormalizedUserName,opt=>opt.MapFrom(src=>src.UserName.ToUpper()))

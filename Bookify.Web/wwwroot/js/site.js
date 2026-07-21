@@ -206,9 +206,73 @@ $(document).ready(function () {
 
 
 
+    //Begin lock 
+    $(document).on('click', '.js-lock-model', function () {
+        var btn = $(this);
+        var row = btn.closest('tr'); // Target the current table row
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        // 1. Display the Confirmation Dialog
+        Swal.fire({
+            title: "Are you sure?",
+            text: "Do you really want to unlock this user?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#198754", // Green for unlock action
+            cancelButtonColor: "#6c757d",  // Secondary gray for cancel
+            confirmButtonText: "Yes, unlock!",
+            cancelButtonText: "Cancel",
+            background: "#1e222d",        // Dark theme background for Bookify
+            color: "#ffffff"
+        }).then((result) => {
 
+            // 2. Check if the user confirmed by clicking "Yes"
+            if (result.isConfirmed) {
+
+                // Send AJAX Request to Unlock User
+                $.ajax({
+                    url: btn.data('url'),
+                    method: 'POST',
+                    data: {
+                        '__RequestVerificationToken': token
+                    },
+                    success: function (response) {
+                        row.find('.js-updated-on').html(response);
+                        // A. Trigger CSS fade-out animation by removing the red background class
+                        row.removeClass('table-danger-row');
+
+                        // B. Show Success Alert
+                        Swal.fire({
+                            title: "Unlocked!",
+                            text: "User has been unlocked successfully.",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false,
+                            background: "#1e222d",
+                            color: "#ffffff"
+                        });
+
+                        // C. Smoothly fade out the unlock button
+                        btn.fadeOut();
+                    },
+                    error: function () {
+                        Swal.fire({
+                            title: "Error!",
+                            text: "Something went wrong while unlocking the user. Please try again.",
+                            icon: "error",
+                            background: "#1e222d",
+                            color: "#ffffff"
+                        });
+                    }
+                });
+
+            }
+        });
+    });
 
 });
+//end lock
+
+
 //begin datatables
 var table = $('#table-js').DataTable({
     info: false,

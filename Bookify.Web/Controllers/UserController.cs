@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Bookify.Web.Controllers
 {
-    [Authorize(Roles = AppRoles.Admin)] 
+    [Authorize(Roles = AppRoles.Admin)]
     public class UserController : Controller
     {
        
@@ -32,6 +33,7 @@ namespace Bookify.Web.Controllers
             
             var users = await userManager.Users.ToListAsync();
             var model = mapper.Map<IEnumerable<UserVM>>(users);
+           
             return View(model);
         }
 
@@ -81,9 +83,9 @@ namespace Bookify.Web.Controllers
                 return PartialView("_UserRow", userViewModel);
 
             }
-            return BadRequest();
+            return BadRequest(string.Join(',', res.Errors.Select(e => e.Description)));
 
-          
+
         }
         
         public async Task<IActionResult> Edit(string id)
@@ -139,9 +141,15 @@ namespace Bookify.Web.Controllers
             user.IsDeleted=!user.IsDeleted;
             user.LastUpdatedOn=DateTime.Now;
             user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            await userManager.UpdateAsync(user);
+            var result = await userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(string.Join(",", result.Errors.Select(e => e.Description)));
+            }
+
             return Ok(user.LastUpdatedOn.ToString());
-            
+
         }
 
 
@@ -180,6 +188,23 @@ namespace Bookify.Web.Controllers
             return BadRequest(string.Join(',', res.Errors.Select(e => e.Description)));
 
             
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnLock(string id)
+        {
+            var user=await userManager.FindByIdAsync(id); 
+            if(user is null) return NotFound();
+            await userManager.SetLockoutEndDateAsync(user, null);
+            user.LastUpdatedOn= DateTime.Now;
+            user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var result = await userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                return BadRequest();
+
+            return Ok(user.LastUpdatedOn.ToString());
         }
 
         public async Task<IActionResult> AllowUserName(UserFormVM model)

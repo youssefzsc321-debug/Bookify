@@ -1,6 +1,7 @@
 using Bookify.Web.Core.Mapping;
 using Bookify.Web.Core.Models;
 using Bookify.Web.Data;
+using Bookify.Web.Helpers;
 using Bookify.Web.Seeds;
 using Bookify.Web.Settings;
 using Microsoft.AspNetCore.Identity;
@@ -43,11 +44,20 @@ namespace Bookify.Web
 
             });
 
+            builder.Services.Configure<IdentityOptions>(options =>
+            {
+                // Default Lockout settings.
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(8);
+                options.Lockout.MaxFailedAccessAttempts = 4;
+                options.Lockout.AllowedForNewUsers = true;
+            });
+
             builder.Services.AddControllersWithViews();
 
             builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(MappingProfile)));
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
             builder.Services.AddExpressiveAnnotations();
+            builder.Services.AddScoped<IUserClaimsPrincipalFactory<AppUser>, AppUserClaims>();
 
             var app = builder.Build();
 

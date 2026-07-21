@@ -121,9 +121,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var category in Model)
+                        @foreach (var user in Model)
                         {
-                            <partial name="_UserRow" model="@category" />
+                            <partial name="_UserRow" model="@user" />
                         }
                     </tbody>
                 </table>

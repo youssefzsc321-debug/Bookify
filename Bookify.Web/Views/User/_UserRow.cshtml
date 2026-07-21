@@ -1,5 +1,6 @@
 ﻿@model UserVM
-<tr class="align-middle">
+
+<tr class="align-middle @(Model.IsLocked?"table-danger-row":string.Empty)" >
 
     <td>@Model.FullName</td>
     <td>@Model.UserName</td>
@@ -61,6 +62,21 @@
                     Reset Password
                 </a>
             </div>
+
+            
+            <div class="menu-item px-3">
+                <a href="javascript:;"
+                   class="menu-link px-3 js-lock-model"
+                   data-title="UnLock User"
+                   data-url="/User/UnLock/@Model.Id"
+                   data-update="true">
+                    <span class="menu-icon">
+                        <i class="bi bi-key-fill"></i>
+                    </span>
+                    UnLock
+                </a>
+            </div>
+
 
         </div>
     </td>

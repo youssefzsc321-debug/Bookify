@@ -8,24 +8,46 @@ namespace Bookify.Web.Seeds
     {
         public static async Task SeedAdminUser(UserManager<AppUser> userManager)
         {
-            if (!userManager.Users.Any())
+
+            var adminEmail = "admin@bookify.com";
+            var user = await userManager.FindByEmailAsync(adminEmail);
+
+            if (user is null)
             {
-                AppUser admin = new AppUser()
+                user = new AppUser
                 {
-                    UserName = "admin@bookify.com",
-                    Email = "admin@bookify.com",
+                    UserName = adminEmail,
+                    Email = adminEmail,
                     FullName = "Admin",
-                    //PasswordHash = "Admin@123",
                     EmailConfirmed = true,
+                    IsDeleted = false
                 };
 
-                var res = await userManager.CreateAsync(admin, "Admin@123");
-                if (res.Succeeded)
+                var createResult = await userManager.CreateAsync(user, "753951420Tt");
+                if (createResult.Succeeded)
                 {
-
-                    await userManager.AddToRoleAsync(admin, AppRoles.Admin);
+                    await userManager.AddToRoleAsync(user, AppRoles.Admin);
                 }
             }
+            else
+            {
+                user.IsDeleted = false;
+                user.EmailConfirmed = true;
+                await userManager.UpdateAsync(user);
+
+                await userManager.RemovePasswordAsync(user);
+                var res = await userManager.AddPasswordAsync(user, "753951420Tt");
+
+                if (res.Succeeded)
+                {
+                    if (!await userManager.IsInRoleAsync(user, AppRoles.Admin))
+                    {
+                        await userManager.AddToRoleAsync(user, AppRoles.Admin);
+                    }
+                }
+            }
+
+
         }
     }
 }
