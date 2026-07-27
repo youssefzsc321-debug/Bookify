@@ -1,4 +1,15 @@
-﻿@using System.Security.Claims
+﻿
+@using System.Security.Claims
+@inject IWebHostEnvironment WebHostEnvironment
+
+@{
+    ViewData["Title"] = "Account Settings";
+    var avatarUrl = $"{WebHostEnvironment.WebRootPath}/Images/users/{User.FindFirst(ClaimTypes.NameIdentifier)!.Value}.png";
+
+    avatarUrl = System.IO.File.Exists(avatarUrl)
+? $"/images/users/{User.FindFirst(ClaimTypes.NameIdentifier)!.Value}.png"
+: "/assets/images/avatar.png";
+}
 <!--begin::Header-->
 <div id="kt_header" class="header">
     <!--begin::Container-->
@@ -134,7 +145,8 @@
                     <!--end::Name-->
                     <!--begin::Symbol-->
                     <div class="symbol symbol-30px symbol-md-40px">
-                        <img src="~/assets/images/avatar.png" alt="image" />
+
+                        <img src=@avatarUrl alt="image" />
                     </div>
                     <!--end::Symbol-->
                 </div>
@@ -146,7 +158,7 @@
                         <div class="menu-content d-flex align-items-center px-3">
                             <!--begin::Avatar-->
                             <div class="symbol symbol-50px me-5">
-                                <img alt="Logo" src="~/assets/images/avatar.png" />
+                                <img alt="Logo" src=@avatarUrl />
                             </div>
                             <!--end::Avatar-->
                             <!--begin::Username-->
@@ -164,7 +176,6 @@
                     <!--begin::Menu separator-->
                     <div class="separator my-2"></div>
                     <!--end::Menu separator-->
-                    
                     <!--begin::Menu item-->
                     <div class="menu-item px-5 my-1">
                         <a asp-area="Identity" asp-page="/Account/Manage/Index" class="menu-link px-5">Account Settings</a>

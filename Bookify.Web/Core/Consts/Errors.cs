@@ -19,6 +19,7 @@
         public const string JustEnglistLetters = "Username must contain only English letters and spaces. Numbers and symbols are not allowed.";
         public const string NotisTheCuurnetPassword = "The password you entered doesn't match your current password.";
         public const string Required = "The {0} field is required.";
+        public const string NotAllowedPhone = "Please enter a valid Egyptian mobile number (11 digits starting with 010, 011, 012, or 015).";
 
     }
 }

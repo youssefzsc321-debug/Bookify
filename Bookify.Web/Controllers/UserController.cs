@@ -1,16 +1,22 @@
 ﻿using AutoMapper;
 using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
+using Bookify.Web.Core.ViewModel;
+using Bookify.Web.Services;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Build.Logging.SimpleErrorLogger;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 namespace Bookify.Web.Controllers
@@ -22,15 +28,23 @@ namespace Bookify.Web.Controllers
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly IMapper mapper;
-        public UserController(UserManager<AppUser> userManager, IMapper mapper, RoleManager<IdentityRole> roleManager)
+        private readonly IEmailSender _emailSender;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IEmailBodyBulider emailBodyBulider;
+
+        
+
+        public UserController(UserManager<AppUser> userManager, IMapper mapper, RoleManager<IdentityRole> roleManager, IEmailSender emailSender, IWebHostEnvironment webHostEnvironment, IEmailBodyBulider emailBodyBulider)
         {
             this.userManager = userManager;
             this.mapper = mapper;
             this.roleManager = roleManager;
+            _emailSender = emailSender;
+            _webHostEnvironment = webHostEnvironment;
+            this.emailBodyBulider = emailBodyBulider;
         }
         public async Task<IActionResult> Index()
         {
-            
             var users = await userManager.Users.ToListAsync();
             var model = mapper.Map<IEnumerable<UserVM>>(users);
            
@@ -78,7 +92,27 @@ namespace Bookify.Web.Controllers
                 {
                     await userManager.AddToRoleAsync(newUser, role);
                 }
- 
+
+               
+                var code = await userManager.GenerateEmailConfirmationTokenAsync(newUser);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = Url.Page(
+                    "/Account/ConfirmEmail",
+                    pageHandler: null,
+                    values: new { area = "Identity", userId = newUser.Id, code = code},
+                    protocol: Request.Scheme);
+
+              
+              
+                var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png",
+                    $"Hello {newUser.FullName},Thanks for joining us",
+                    "Please Confirm Eamil", $"{HtmlEncoder.Default.Encode(callbackUrl)}",
+                    "Acvtive account");
+  
+                 
+
+                await _emailSender.SendEmailAsync(newUser.Email, "Confirm your email",body);
+
                 var userViewModel = mapper.Map<UserVM>(newUser);
                 return PartialView("_UserRow", userViewModel);
 
@@ -124,6 +158,7 @@ namespace Bookify.Web.Controllers
                     await userManager.RemoveFromRolesAsync(user,currnetRoles);
                     await userManager.AddToRolesAsync(user, model.SelectedRoles);
                 }
+                await userManager.UpdateSecurityStampAsync(user);
                 var modelVm = mapper.Map<UserVM>(user);
                 return PartialView("_UserRow", modelVm);
 
@@ -143,11 +178,15 @@ namespace Bookify.Web.Controllers
             user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
             var result = await userManager.UpdateAsync(user);
 
+            
             if (!result.Succeeded)
             {
                 return BadRequest(string.Join(",", result.Errors.Select(e => e.Description)));
             }
-
+            if(user.IsDeleted)
+            {
+                await userManager.UpdateSecurityStampAsync(user);
+            }
             return Ok(user.LastUpdatedOn.ToString());
 
         }

@@ -2,18 +2,19 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Bookify.Web.Core.Models;
+using Bookify.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Threading.Tasks;
 
 namespace Bookify.Web.Areas.Identity.Pages.Account
 {
@@ -21,11 +22,13 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly IEmailBodyBulider emailBodyBulider;
 
-        public ForgotPasswordModel(UserManager<AppUser> userManager, IEmailSender emailSender)
+        public ForgotPasswordModel(UserManager<AppUser> userManager, IEmailSender emailSender, IEmailBodyBulider emailBodyBulider)
         {
             _userManager = userManager;
             _emailSender = emailSender;
+            this.emailBodyBulider = emailBodyBulider;
         }
 
         /// <summary>
@@ -71,10 +74,16 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
+                var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png",
+                   $"Hello {user.FullName}",
+                   "Please click the below button to reset your password",
+                   $"{HtmlEncoder.Default.Encode(callbackUrl)}",
+                   "Reset Password");
+
                 await _emailSender.SendEmailAsync(
                     Input.Email,
                     "Reset Password",
-                    $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    body);
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

@@ -2,14 +2,15 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
+using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace Bookify.Web.Areas.Identity.Pages.Account.Manage
 {
@@ -56,16 +57,22 @@ namespace Bookify.Web.Areas.Identity.Pages.Account.Manage
             [Required]
             [DataType(DataType.Password)]
             [Display(Name = "Current password")]
+
             public string OldPassword { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
+
+
+            
+            
             [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [StringLength(100, ErrorMessage = Errors.PasswordNotMatchCritera, MinimumLength = 8)]
             [DataType(DataType.Password)]
             [Display(Name = "New password")]
+            [RegularExpression(RegexPatterns.PasswordPattern, ErrorMessage = Errors.PasswordNotMatchCritera)]
             public string NewPassword { get; set; }
 
             /// <summary>
@@ -74,7 +81,7 @@ namespace Bookify.Web.Areas.Identity.Pages.Account.Manage
             /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm new password")]
-            [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+            [Compare("NewPassword", ErrorMessage = Errors.PassworNotMatch)]
             public string ConfirmPassword { get; set; }
         }
 
