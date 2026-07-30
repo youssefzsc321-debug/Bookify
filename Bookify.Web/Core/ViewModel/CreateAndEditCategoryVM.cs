@@ -8,7 +8,7 @@ namespace Bookify.Web.Core.ViewModel
     public class CreateAndEditCategoryVM
     {
         public int Id { get; set; }
-        [MaxLength(100, ErrorMessage = Errors.MaxLength), Display(Name = "Category")]
+        [MaxLength(100, ErrorMessage = Errors.MaxLengthCharcters), Display(Name = "Category")]
         [Remote(action: "AllowItem", controller: "Categories", AdditionalFields = "Id", ErrorMessage = Errors.Duplicated)]
         public string Name { get; set; }
 

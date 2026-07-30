@@ -38,7 +38,7 @@ namespace Bookify.Web.Services
 
             stream.Dispose();
 
-            
+
             if (hasThumbnail)
             {
                 using var Loadedimage = SixLabors.ImageSharp.Image.Load(image.OpenReadStream());
@@ -53,23 +53,23 @@ namespace Bookify.Web.Services
 
         }
 
-        public void Delete(string imagePath, string? thumnailPath=null)
+        public void Delete(string imagePath, string? thumnailPath = null)
         {
             var oldPathImage = $"{_webHost.WebRootPath}{imagePath}";
 
             //Delete originImage
-            if (System.IO.File.Exists(oldPathImage))
+            if (File.Exists(oldPathImage))
             {
-                System.IO.File.Delete(oldPathImage);
+                File.Delete(oldPathImage);
             }
 
             //Delete ThumnailImage
             if (!string.IsNullOrEmpty(thumnailPath))
             {
                 var oldPathThum = $"{_webHost.WebRootPath}{thumnailPath}";
-                if (System.IO.File.Exists(oldPathThum))
+                if (File.Exists(oldPathThum))
                 {
-                    System.IO.File.Delete(oldPathThum);
+                    File.Delete(oldPathThum);
                 }
             }
         }

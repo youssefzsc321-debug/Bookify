@@ -9,21 +9,21 @@ namespace Bookify.Web.Core.ViewModel
     {
         public string? Id { get; set; }
 
-        [MaxLength(100,ErrorMessage =Errors.MaxLength)]
+        [MaxLength(100,ErrorMessage =Errors.MaxLengthCharcters)]
         [Display(Name ="Full Name")]
         [RegularExpression(RegexPatterns.AllowJustEnglish,ErrorMessage =Errors.JustEnglistLetters)]
         public string FullName { get; set; }
 
-        [MaxLength(50,ErrorMessage =Errors.MaxLength)]
+        [MaxLength(50,ErrorMessage =Errors.MaxLengthCharcters)]
         [Display(Name ="User Name")]
-        [Remote(action: "AllowUserName", controller: "User",AdditionalFields ="Id",ErrorMessage =Errors.DublicatedUserName)]
+        [Remote(action: "AllowUserName", controller: "User",AdditionalFields ="Id",ErrorMessage =Errors.Duplicated)]
         [RegularExpression(RegexPatterns.UserNamePattern,ErrorMessage =Errors.UserNamePattern)]
         public string UserName { get; set; }
 
         
-        [MaxLength(150,ErrorMessage =Errors.MaxLength)]
+        [MaxLength(150,ErrorMessage =Errors.MaxLengthCharcters)]
         [EmailAddress]
-        [Remote(action: "AllowUserEmail", controller: "User", AdditionalFields ="Id",ErrorMessage =Errors.DublicatedEmail)]
+        [Remote(action: "AllowUserEmail", controller: "User", AdditionalFields ="Id",ErrorMessage =Errors.Duplicated)]
         public string Email { get; set; }
 
         [StringLength(100, ErrorMessage =Errors.NotAllowedPassword , MinimumLength = 8)]

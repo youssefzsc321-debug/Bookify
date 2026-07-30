@@ -1,0 +1,225 @@
+﻿using AutoMapper;
+using Bookify.Web.Core.Consts;
+using Bookify.Web.Core.Models;
+using Bookify.Web.Services;
+using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+namespace Bookify.Web.Controllers
+{
+    [Authorize(Roles = AppRoles.Reception)]
+    public class SubscripersController : Controller
+    {
+        private readonly ApplicationDbContext context;
+        private readonly IMapper mapper;
+        private readonly IImageService imageService;
+        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService)
+        {
+            this.context = context;
+            this.mapper = mapper;
+            this.imageService = imageService;
+        }
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SearchForSubscriper(SearchFormVM model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+
+
+            var sub = context.Subscripers.FirstOrDefault(s => s.MobileNumber == model.Value
+                        || s.NationalId == model.Value
+                        || s.Email == model.Value);
+
+            if (sub == null)
+                return PartialView("_DrawSubscriper", null);
+
+
+            var modelVm = new SearchResultSusbscriperVM()
+            {
+                Id = sub.Id,
+                FullName = $"{sub.FirstName} {sub.LastName}",
+                ImageThumnail = sub.imageThumbnailUrl
+            };
+
+            return PartialView("_DrawSubscriper", modelVm);
+        }
+
+        public IActionResult Details(int id)
+        {
+            var sub = context.Subscripers.Include(s => s.Area)
+                .Include(s => s.Governrete)
+               .FirstOrDefault(s => s.Id == id);
+            if (sub is null) return NotFound();
+            var modelVm = mapper.Map<SubscriberDetailsVM>(sub);
+            return View("Details", modelVm);
+
+        }
+        public IActionResult Create()
+        {
+            return View("Form", FillMolde());
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(SubscriperFormVM model)
+        {
+            if (!ModelState.IsValid)
+                return View("Form", FillMolde(model));
+
+            var subscriper = mapper.Map<Subscriper>(model);
+            subscriper.GovernreteId = model.SelectedGovernorate;
+            subscriper.AreaId = model.SelectedArea;
+
+            if (model.Image is not null)
+            {
+                //image,imageName,folder,hasThum
+                var extention = Path.GetExtension(model.Image.FileName);
+                var imageName = $"{Guid.NewGuid()}{extention}";
+                var folder = "/Images/Subscriper";
+                var (IsUploaded, errorMesage) = await imageService.UploadAsync(model.Image, imageName, folder, true);
+                if (IsUploaded)
+                {
+                    subscriper.ImageUrl = $"{folder}/{imageName}";
+                    subscriper.imageThumbnailUrl = $"{folder}/Thumb/{imageName}";
+                }
+                else
+                {
+                    ModelState.AddModelError(nameof(model.Image), errorMesage);
+                    return View("Form", FillMolde(model));
+
+                }
+
+            }
+            subscriper.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            context.Subscripers.Add(subscriper);
+            context.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        public IActionResult Edit(int id)
+        {
+            var subscriper = context.Subscripers.FirstOrDefault(s => s.Id == id);
+            if (subscriper == null) return NotFound();
+            var modelVm = mapper.Map<SubscriperFormVM>(subscriper);
+
+            modelVm.SelectedGovernorate = subscriper.GovernreteId;
+            modelVm.SelectedArea = subscriper.AreaId;
+
+            return View("Form", FillMolde(modelVm));
+
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(SubscriperFormVM model)
+        {
+            if (!ModelState.IsValid)
+                return View("Form", FillMolde(model));
+
+
+            var subscriper = context.Subscripers.FirstOrDefault(s => s.Id == model.Id);
+            if (subscriper is null) return NotFound();
+            if (model.Image is not null)
+            {
+                if (subscriper.ImageUrl is not null)
+                {
+                    imageService.Delete(subscriper.ImageUrl, subscriper.imageThumbnailUrl);
+                }
+                var extention = Path.GetExtension(model.Image.FileName);
+                var imageName = $"{Guid.NewGuid()}{extention}";
+                var folder = "/Images/Subscriper";
+                var (isUploaded, errorMessage) = await imageService.UploadAsync(model.Image, imageName, folder, true);
+                if (isUploaded)
+                {
+                    model.ImageUrl = $"{folder}/{imageName}";
+                    model.imageThumbnailUrl = $"{folder}/Thumb/{imageName}";
+                }
+                else
+                {
+                    ModelState.AddModelError(nameof(model.Image), errorMessage);
+                    return View("Form", FillMolde(model));
+                }
+            }
+            else
+            {
+                model.ImageUrl = subscriper.ImageUrl;
+                model.imageThumbnailUrl = subscriper.imageThumbnailUrl;
+            }
+
+
+            subscriper = mapper.Map(model, subscriper);
+            subscriper.AreaId = model.SelectedArea;
+            subscriper.GovernreteId = model.SelectedGovernorate;
+            subscriper.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            subscriper.LastUpdatedOn = DateTime.Now;
+            context.Subscripers.Update(subscriper);
+            context.SaveChanges();
+            return Ok();
+
+        }
+
+
+        private SubscriperFormVM FillMolde(SubscriperFormVM? modle = null)
+        {
+            var modelVM = (modle is null ? new SubscriperFormVM() : modle);
+            modelVM.Governorates = context.Governretes.Where(g => !g.IsDeleted).OrderBy(g => g.Name)
+                        .Select(g => new SelectListItem { Value = g.Id.ToString(), Text = g.Name });
+
+            if (modelVM.SelectedGovernorate > 0)
+            {
+                modelVM.Areas = context.Areas.Where(a => !a.IsDeleted && a.GovernreteId == modelVM.SelectedGovernorate).OrderBy(a => a.Name)
+                           .Select(a => new SelectListItem { Value = a.Id.ToString(), Text = a.Name }).ToList();
+
+            }
+            else
+                modelVM.Areas = new List<SelectListItem>();
+
+            return modelVM;
+
+        }
+
+        [AjaxFilter]
+        public IActionResult GetAreasAjax(int Governorateid)
+        {
+            var areas = context.Areas.Where(a => !a.IsDeleted && a.GovernreteId == Governorateid)
+                .Select(a => new SelectListItem { Value = a.Id.ToString(), Text = a.Name }).ToList();
+            return Ok(areas);
+        }
+
+
+        public IActionResult AllowEmail(SubscriperFormVM model)
+        {
+            var sub = context.Subscripers.FirstOrDefault(s => s.Email == model.Email);
+            var valid = sub is null || model.Id == sub.Id;
+            return Json(valid);
+        }
+        public IActionResult AllowMobile(SubscriperFormVM model)
+        {
+            var sub = context.Subscripers.FirstOrDefault(s => s.MobileNumber == model.MobileNumber);
+            var valid = sub is null || model.Id == sub.Id;
+            return Json(valid);
+        }
+        public IActionResult AllowNationalId(SubscriperFormVM model)
+        {
+            var sub = context.Subscripers.FirstOrDefault(s => s.NationalId == model.NationalId);
+            var valid = sub is null || model.Id == sub.Id;
+            return Json(valid);
+        }
+
+
+
+
+    }
+}

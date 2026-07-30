@@ -1,0 +1,197 @@
+﻿@model SubscriperFormVM
+
+@{
+    ViewData["Title"] = "subscribers";
+}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h3 class="card-title">@(Model.Id == 0 ? "Add Subscriber" : "Edit Subscriber")</h3>
+    </div>
+    <div class="card-body p-lg-10">
+        <form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" method="post" enctype="multipart/form-data" id="SubscriberForm">
+
+            <!-- Hidden Fields for Edit Mode -->
+            @if (Model.Id > 0)
+            {
+                <input type="hidden" asp-for="Id" />
+            }
+
+            <!-- 1. Image Upload -->
+            <div class="row mb-8">
+                <label class="col-lg-3 col-form-label fw-semibold fs-6">Image</label>
+                <div class="col-lg-9">
+                    <!-- Metronic Image Input Component -->
+                    <div class="image-input image-input-outline @(string.IsNullOrEmpty(Model.ImageUrl) ? "image-input-empty" : "")"
+                         data-kt-image-input="true"
+                         style="background-image: url('/assets/images/Portrait_Placeholder.png')">
+
+                        <!-- Preview wrapper -->
+                        <div class="image-input-wrapper w-125px h-125px"
+                             style="background-image: @(string.IsNullOrEmpty(Model.ImageUrl) ? "url('/assets/images/Portrait_Placeholder.png')" : $"url('{Model.ImageUrl}')")">
+                        </div>
+
+                        <!-- Edit / Change Button -->
+                        <label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
+                               data-kt-image-input-action="change"
+                               data-bs-toggle="tooltip"
+                               title="Change image">
+                            <i class="bi bi-pencil-fill fs-7"></i>
+                            <input type="file" asp-for="Image" accept=".png, .jpg, .jpeg" />
+                            <input type="hidden" name="avatar_remove" />
+                        </label>
+
+                        <!-- Cancel Button (El-X button for newly selected image) -->
+                        <span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow"
+                              data-kt-image-input-action="cancel"
+                              data-bs-toggle="tooltip"
+                              title="Cancel image">
+                            <i class="bi bi-x fs-2"></i>
+                        </span>
+
+                        
+                        
+                    </div>
+                    <div class="form-text fs-7 text-muted mt-2">Allowed file types: png, jpg, jpeg.</div>
+                    <span asp-validation-for="Image" class="text-danger d-block mt-1"></span>
+                </div>
+            </div>
+
+            <!-- 2. Full Name -->
+            <div class="row mb-6">
+                <label class="col-lg-3 col-form-label required fw-semibold fs-6">Full Name</label>
+                <div class="col-lg-9">
+                    <div class="row">
+                        <div class="col-lg-6 fv-row mb-3 mb-lg-0">
+                            <input type="text" asp-for="FirstName" class="form-control form-control-lg form-control-solid" placeholder="First name" />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6 fv-row">
+                            <input type="text" asp-for="LastName" class="form-control form-control-lg form-control-solid" placeholder="Last name" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Date of Birth -->
+            <div class="row mb-6">
+                <label class="col-lg-3 col-form-label required fw-semibold fs-6">Date of Birth</label>
+                <div class="col-lg-9 fv-row">
+                    <input type="text" asp-for="DateOfBirth" class="form-control form-control-lg form-control-solid flatpickr-input" placeholder="Date of Birth" id="kt_datepicker_1" />
+                    <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- 4. National ID -->
+            <div class="row mb-6">
+                <label class="col-lg-3 col-form-label required fw-semibold fs-6">National ID</label>
+                <div class="col-lg-9 fv-row">
+                    <input type="text" asp-for="NationalId" class="form-control form-control-lg form-control-solid" placeholder="National ID" maxlength="14" />
+                    <span asp-validation-for="NationalId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- 5. Contacts -->
+            <div class="row mb-6">
+                <label class="col-lg-3 col-form-label fw-semibold fs-6">Contacts</label>
+                <div class="col-lg-9">
+                    <div class="row align-items-center">
+                        <div class="col-lg-5 fv-row mb-3 mb-lg-0">
+                            <input type="email" asp-for="Email" class="form-control form-control-lg form-control-solid" placeholder="Email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-4 fv-row mb-3 mb-lg-0">
+                            <input type="text" asp-for="MobileNumber" class="form-control form-control-lg form-control-solid" placeholder="Mobile Number" />
+                            <span asp-validation-for="MobileNumber" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-3 fv-row">
+                            <div class="form-check form-check-custom form-check-solid form-check-sm">
+                                <input class="form-check-input" type="checkbox" asp-for="HasWhatsApp" />
+                                <label class="form-check-label fw-semibold text-gray-700 fs-7" asp-for="HasWhatsApp">
+                                    Has WhatsApp?
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Governorate / Area -->
+            <div class="row mb-6">
+                <label class="col-lg-3 col-form-label required fw-semibold fs-6">Governorate/Area</label>
+                <div class="col-lg-9">
+                    <div class="row">
+                        <div class="col-lg-6 fv-row mb-3 mb-lg-0">
+                            <select asp-for="SelectedGovernorate" asp-items="Model.Governorates" class="form-select form-select-solid form-select-lg" id="SelectedGovernorate" data-control="select2" data-placeholder="Select a governorate ...">
+                                <option value=""></option>
+                            </select>
+                            <span asp-validation-for="SelectedGovernorate" class="text-danger"></span>
+                        </div>
+                        <div class="col-lg-6 fv-row">
+                            <select asp-for="SelectedArea" asp-items="Model.Areas" class="form-select form-select-solid form-select-lg" id="SelectedArea" data-control="select2" data-placeholder="Select an area...">
+                                <option value=""></option>
+                            </select>
+                            <span asp-validation-for="SelectedArea" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Address -->
+            <div class="row mb-6">
+                <label class="col-lg-3 col-form-label required fw-semibold fs-6">Address</label>
+                <div class="col-lg-9 fv-row">
+                    <textarea asp-for="Address" class="form-control form-control-lg form-control-solid" rows="3" placeholder="Address"></textarea>
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="d-flex justify-content-end pt-6">
+                <a asp-action="Index" class="btn btn-light me-3">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <span class="indicator-label">Save Changes</span>
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Flatpickr setup
+            $("#kt_datepicker_1").flatpickr({
+                dateFormat: "d-m-Y",
+                maxDate: "today"
+            });
+
+            // Fill The Area List
+            $('#SelectedGovernorate').on('change', function () {
+
+                var governorateId = $(this).val();
+                var areaList = $('#SelectedArea');
+                areaList.empty();
+                areaList.append('<option></option>');
+
+                if (governorateId !== "") {
+                    $.ajax({
+                        url: "/Subscripers/GetAreasAjax?Governorateid=" + governorateId,
+                        type: "GET",
+                        success: function (areas) {
+                            $.each(areas, function (indx, area) {
+                                var newOption = '<option value="' + area.value + '">' + area.text + '</option>';
+                                areaList.append(newOption);
+                            });
+                        },
+                        error: function () {
+                            showErrorMessage();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

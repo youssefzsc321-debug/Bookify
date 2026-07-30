@@ -61,7 +61,7 @@ namespace Bookify.Web.Areas.Identity.Pages.Account.Manage
         public class InputModel
         {
             
-            [MaxLength(100, ErrorMessage = Errors.MaxLength)]
+            [MaxLength(100, ErrorMessage = Errors.MaxLengthCharcters)]
             [Display(Name = "Full Name")]
             [RegularExpression(RegexPatterns.AllowJustEnglish, ErrorMessage = Errors.JustEnglistLetters)]
             [Required] 

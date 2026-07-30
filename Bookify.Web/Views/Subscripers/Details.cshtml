@@ -1,0 +1,149 @@
+﻿@model Bookify.Web.Core.ViewModel.SubscriberDetailsVM
+
+@{
+    ViewData["Title"] = "Subscriber Details";
+}
+
+<div class="d-flex flex-column flex-xl-row">
+    <div class="flex-column flex-lg-row-auto w-100 w-xl-350px mb-10">
+        <div class="card mb-5 mb-xl-8">
+            <div class="card-body pt-15">
+                <div class="d-flex flex-center flex-column mb-5">
+                    <div class="symbol symbol-100px symbol-circle mb-7">
+                        <a data-fslightbox="gallery"
+                           href="@(string.IsNullOrEmpty(Model.ImageUrl) ? (string.IsNullOrEmpty(Model.imageThumbnailUrl) ? "/assets/images/avatar-blank.svg" : Model.imageThumbnailUrl) : Model.ImageUrl)"
+                           class="d-block symbol-label rounded-circle overflow-hidden position-relative">
+                            <img src="@(string.IsNullOrEmpty(Model.imageThumbnailUrl) ? "/assets/images/avatar-blank.svg" : Model.imageThumbnailUrl)"
+                                 alt="subscriber avatar"
+                                 class="w-100 h-100 object-fit-cover cursor-pointer" />
+                        </a>
+                    </div>
+
+                    <a href="#" class="fs-3 text-gray-800 text-hover-primary fw-bold mb-1">
+                        @(Model.FullName ?? "N/A")
+                    </a>
+
+                    <div class="fs-5 fw-semibold text-muted mb-6">
+                        @(Model.Email ?? "No Email Provided")
+                    </div>
+                </div>
+
+                <div class="separator separator-dashed my-3"></div>
+
+                <div class="pb-5 fs-6">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="fw-bold fs-5 text-gray-800">Details</div>
+                        <span class="badge badge-light-primary">Active</span>
+                    </div>
+
+                    <div class="fw-bold mt-5 text-muted">Subscriber ID</div>
+                    <div class="text-gray-600">#@Model.Id</div>
+
+                    <div class="fw-bold mt-5 text-muted">National ID</div>
+                    <div class="text-gray-600">@(Model.NationalId ?? "N/A")</div>
+
+                    <div class="fw-bold mt-5 text-muted">Mobile Number</div>
+                    <div class="text-gray-600">@(Model.MobileNumber ?? "N/A")</div>
+
+                    <div class="fw-bold mt-5 text-muted">Date of Birth</div>
+                    <div class="text-gray-600">
+                        @(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd MMM yyyy") : "N/A")
+                    </div>
+
+                    <div class="fw-bold mt-5 text-muted">Governorate / Area</div>
+                    <div class="text-gray-600">
+                        @(!string.IsNullOrEmpty(Model.Governrete) ? Model.Governrete : "N/A")
+                        @(!string.IsNullOrEmpty(Model.Area) ? $" / {Model.Area}" : "")
+                    </div>
+
+                    <div class="fw-bold mt-5 text-muted">Address</div>
+                    <div class="text-gray-600">@(Model.Address ?? "N/A")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-lg-row-fluid ms-lg-15">
+        <ul class="nav nav-custom nav-tabs nav-line-tabs nav-line-tabs-2x border-0 fs-4 fw-semibold mb-8">
+            <li class="nav-item">
+                <a class="nav-link text-active-primary pb-4 active" data-bs-toggle="tab" href="#kt_subscriber_overview">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-active-primary pb-4" data-bs-toggle="tab" href="#kt_subscriber_rentals">Rentals / Activity</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="kt_subscriber_overview" role="tabpanel">
+
+                <div class="row g-5 g-xl-8 mb-8">
+                    <div class="col-xl-6">
+                        <div class="card bg-light-primary card-xl-stretch mb-xl-8">
+                            <div class="card-body my-3">
+                                <span class="card-title fw-bold text-primary fs-3 mb-3 d-block">Active Rentals</span>
+                                <div class="py-1">
+                                    <span class="text-dark fw-bold fs-2hx me-2">2</span>
+                                    <span class="fw-semibold text-muted fs-7">Books currently rented</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6">
+                        <div class="card bg-primary card-xl-stretch mb-xl-8">
+                            <div class="card-body my-3">
+                                <span class="card-title fw-bold text-white fs-3 mb-3 d-block">Membership Status</span>
+                                <div class="py-1">
+                                    <span class="text-white fw-bold fs-2hx me-2">Valid</span>
+                                    <span class="fw-semibold text-white opacity-75 fs-7">Tier Milestone Reached</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-xl-stretch mb-5 mb-xl-8">
+                    <div class="card-header border-0 pt-5">
+                        <h3 class="card-title align-items-start flex-column">
+                            <span class="card-label fw-bold fs-3 mb-1">Rental History</span>
+                            <span class="text-muted mt-1 fw-semibold fs-7">Recent subscriber activity</span>
+                        </h3>
+                    </div>
+                    <div class="card-body py-3">
+                        <div class="table-responsive">
+                            <table class="table align-middle table-row-dashed fs-6 gy-5">
+                                <thead>
+                                    <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
+                                        <th>Book Title</th>
+                                        <th>Status</th>
+                                        <th>Rental Date</th>
+                                        <th>Return Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-600 fw-semibold">
+                                    <tr>
+                                        <td>Clean Code</td>
+                                        <td><span class="badge badge-light-success">Returned</span></td>
+                                        <td>10 May 2024</td>
+                                        <td>24 May 2024</td>
+                                    </tr>
+                                    <tr>
+                                        <td>C# in Depth</td>
+                                        <td><span class="badge badge-light-warning">Rented</span></td>
+                                        <td>01 Jun 2024</td>
+                                        <td>15 Jun 2024</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

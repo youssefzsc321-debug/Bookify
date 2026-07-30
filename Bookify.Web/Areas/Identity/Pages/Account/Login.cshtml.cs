@@ -129,9 +129,8 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
                     _logger.LogInformation("User logged in.");
                     return LocalRedirect(returnUrl);
                 }
-                if(result.IsNotAllowed) // الكونديشن دا بيتأكد اذا كان اليوزر عامل كونفيرم للايميل ولا لال
+                if(result.IsNotAllowed) // 
                 {
-                    //ResendEmailConfirmation.cshtml فلو مش عامل اقفشه ووديه لصفحة ال 
                     return RedirectToPage("./ResendEmailConfirmation",new { userName = Input.UserName });
                 }
                 if (result.RequiresTwoFactor)

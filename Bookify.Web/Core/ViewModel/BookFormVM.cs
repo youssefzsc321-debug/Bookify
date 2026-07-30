@@ -10,7 +10,7 @@ namespace Bookify.Web.Core.ViewModel
     public class BookFormVM
     {
         public int Id { get; set; }
-        [MaxLength(500, ErrorMessage = Errors.MaxLength)]
+        [MaxLength(500, ErrorMessage = Errors.MaxLengthCharcters)]
 
 
         [Remote(action: "AllowItem", controller: "Books", AdditionalFields = "AuthorsId,Id", ErrorMessage = Errors.TitleWithTheSameAuthor)]
@@ -23,7 +23,7 @@ namespace Bookify.Web.Core.ViewModel
         public int AuthorsId { get; set; }
         public IEnumerable<SelectListItem>? Authors { get; set; }
 
-        [MaxLength(200, ErrorMessage = Errors.MaxLength)]
+        [MaxLength(200, ErrorMessage = Errors.MaxLengthCharcters)]
         public string Publisher { get; set; }
 
         [Display(Name = "Publishing Date")]
@@ -37,7 +37,7 @@ namespace Bookify.Web.Core.ViewModel
         public string? imageThumbnailUrl { get; set; }
 
 
-        [MaxLength(50, ErrorMessage = Errors.MaxLength)]
+        [MaxLength(50, ErrorMessage = Errors.MaxLengthCharcters)]
         public string Hall { get; set; }
 
         [Display(Name = "Is available for rental?")]
