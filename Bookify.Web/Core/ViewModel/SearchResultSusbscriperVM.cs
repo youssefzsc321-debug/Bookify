@@ -2,9 +2,9 @@
 {
     public class SearchResultSusbscriperVM
     {
-        public int Id { get; set; }
+        public string? key { get; set; }
         public string? FullName { get; set; }
 
-        public string? ImageThumnail { get; set; }
+        public string? imageThumbnailUrl { get; set; }
     }
 }

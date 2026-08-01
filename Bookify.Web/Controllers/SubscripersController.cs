@@ -4,10 +4,12 @@ using Bookify.Web.Core.Models;
 using Bookify.Web.Services;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -17,13 +19,15 @@ namespace Bookify.Web.Controllers
     public class SubscripersController : Controller
     {
         private readonly ApplicationDbContext context;
+        private readonly IDataProtector _dataProtector;
         private readonly IMapper mapper;
         private readonly IImageService imageService;
-        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService)
+        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService, IDataProtectionProvider dataProtector)
         {
             this.context = context;
             this.mapper = mapper;
             this.imageService = imageService;
+            _dataProtector = dataProtector.CreateProtector("MySecureKey");
         }
         public IActionResult Index()
         {
@@ -45,25 +49,23 @@ namespace Bookify.Web.Controllers
 
             if (sub == null)
                 return PartialView("_DrawSubscriper", null);
+            var modelVm = mapper.Map<SearchResultSusbscriperVM>(sub);
 
-
-            var modelVm = new SearchResultSusbscriperVM()
-            {
-                Id = sub.Id,
-                FullName = $"{sub.FirstName} {sub.LastName}",
-                ImageThumnail = sub.imageThumbnailUrl
-            };
+            modelVm.key=_dataProtector.Protect(sub.Id.ToString());
 
             return PartialView("_DrawSubscriper", modelVm);
         }
 
-        public IActionResult Details(int id)
+        public IActionResult Details(string id)
         {
+            var subId = _dataProtector.Unprotect(id);
             var sub = context.Subscripers.Include(s => s.Area)
                 .Include(s => s.Governrete)
-               .FirstOrDefault(s => s.Id == id);
+               .FirstOrDefault(s => s.Id ==int.Parse(subId));
             if (sub is null) return NotFound();
             var modelVm = mapper.Map<SubscriberDetailsVM>(sub);
+            modelVm.key = _dataProtector.Protect(sub.Id.ToString());
+            ViewData["Id"] = subId;
             return View("Details", modelVm);
 
         }
@@ -105,17 +107,21 @@ namespace Bookify.Web.Controllers
             subscriper.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
             context.Subscripers.Add(subscriper);
             context.SaveChanges();
-            return RedirectToAction("Index");
+            var subId = _dataProtector.Protect(subscriper.Id.ToString());
+            return RedirectToAction("Details", new { Id = subId });
         }
 
-        public IActionResult Edit(int id)
+        public IActionResult Edit(string id)
         {
-            var subscriper = context.Subscripers.FirstOrDefault(s => s.Id == id);
+            var subId = int.Parse(_dataProtector.Unprotect(id));
+            var subscriper = context.Subscripers.FirstOrDefault(s => s.Id == subId);
             if (subscriper == null) return NotFound();
             var modelVm = mapper.Map<SubscriperFormVM>(subscriper);
 
             modelVm.SelectedGovernorate = subscriper.GovernreteId;
             modelVm.SelectedArea = subscriper.AreaId;
+            modelVm.Key = id;
+           
 
             return View("Form", FillMolde(modelVm));
 
@@ -128,8 +134,8 @@ namespace Bookify.Web.Controllers
             if (!ModelState.IsValid)
                 return View("Form", FillMolde(model));
 
-
-            var subscriper = context.Subscripers.FirstOrDefault(s => s.Id == model.Id);
+            var suId = int.Parse(_dataProtector.Unprotect(model.Key));
+            var subscriper = context.Subscripers.FirstOrDefault(s => s.Id == suId);
             if (subscriper is null) return NotFound();
             if (model.Image is not null)
             {
@@ -166,7 +172,7 @@ namespace Bookify.Web.Controllers
             subscriper.LastUpdatedOn = DateTime.Now;
             context.Subscripers.Update(subscriper);
             context.SaveChanges();
-            return Ok();
+            return RedirectToAction("Details", new { Id = model.Key });
 
         }
 
@@ -201,20 +207,26 @@ namespace Bookify.Web.Controllers
 
         public IActionResult AllowEmail(SubscriperFormVM model)
         {
+            var subId = 0;
+            if(!string.IsNullOrEmpty(model.Key)) subId= int.Parse(_dataProtector.Unprotect(model.Key));
             var sub = context.Subscripers.FirstOrDefault(s => s.Email == model.Email);
-            var valid = sub is null || model.Id == sub.Id;
+            var valid = sub is null || subId == sub.Id;
             return Json(valid);
         }
         public IActionResult AllowMobile(SubscriperFormVM model)
         {
+            var subId = 0;
+            if (!string.IsNullOrEmpty(model.Key)) subId = int.Parse(_dataProtector.Unprotect(model.Key));
             var sub = context.Subscripers.FirstOrDefault(s => s.MobileNumber == model.MobileNumber);
-            var valid = sub is null || model.Id == sub.Id;
+            var valid = sub is null || subId == sub.Id;
             return Json(valid);
         }
         public IActionResult AllowNationalId(SubscriperFormVM model)
         {
+            var subId = 0;
+            if (!string.IsNullOrEmpty(model.Key)) subId = int.Parse(_dataProtector.Unprotect(model.Key));
             var sub = context.Subscripers.FirstOrDefault(s => s.NationalId == model.NationalId);
-            var valid = sub is null || model.Id == sub.Id;
+            var valid = sub is null || subId == sub.Id;
             return Json(valid);
         }
 

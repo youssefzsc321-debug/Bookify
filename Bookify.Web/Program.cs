@@ -5,6 +5,7 @@ using Bookify.Web.Helpers;
 using Bookify.Web.Seeds;
 using Bookify.Web.Services;
 using Bookify.Web.Settings;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -55,7 +56,7 @@ namespace Bookify.Web
             });
 
             builder.Services.AddControllersWithViews();
-
+            builder.Services.AddDataProtection().SetApplicationName(nameof(Bookify));
             builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(MappingProfile)));
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
             builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
