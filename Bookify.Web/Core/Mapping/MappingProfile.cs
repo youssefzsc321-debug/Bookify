@@ -65,9 +65,9 @@ namespace Bookify.Web.Core.Mapping
                 .ForMember(dest => dest.Governrete, opt => opt.MapFrom(src => src.Governrete.Name));
             CreateMap<Subscriper, SearchResultSusbscriperVM>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"));
-            
 
 
+            CreateMap<Subscriptions, SubscriptionsVM>();
 
 
 

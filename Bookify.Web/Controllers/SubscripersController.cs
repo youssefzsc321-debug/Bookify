@@ -5,12 +5,15 @@ using Bookify.Web.Services;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Claims;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 namespace Bookify.Web.Controllers
@@ -22,12 +25,17 @@ namespace Bookify.Web.Controllers
         private readonly IDataProtector _dataProtector;
         private readonly IMapper mapper;
         private readonly IImageService imageService;
-        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService, IDataProtectionProvider dataProtector)
+        private readonly IEmailSender emailSender;
+        private readonly IEmailBodyBulider emailBodyBulider;
+
+        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService, IDataProtectionProvider dataProtector, IEmailSender emailSender, IEmailBodyBulider emailBodyBulider)
         {
             this.context = context;
             this.mapper = mapper;
             this.imageService = imageService;
             _dataProtector = dataProtector.CreateProtector("MySecureKey");
+            this.emailSender = emailSender;
+            this.emailBodyBulider = emailBodyBulider;
         }
         public IActionResult Index()
         {
@@ -51,7 +59,7 @@ namespace Bookify.Web.Controllers
                 return PartialView("_DrawSubscriper", null);
             var modelVm = mapper.Map<SearchResultSusbscriperVM>(sub);
 
-            modelVm.key=_dataProtector.Protect(sub.Id.ToString());
+            modelVm.key = _dataProtector.Protect(sub.Id.ToString());
 
             return PartialView("_DrawSubscriper", modelVm);
         }
@@ -59,9 +67,11 @@ namespace Bookify.Web.Controllers
         public IActionResult Details(string id)
         {
             var subId = _dataProtector.Unprotect(id);
-            var sub = context.Subscripers.Include(s => s.Area)
+            var sub = context.Subscripers
+                .Include(s => s.Area)
                 .Include(s => s.Governrete)
-               .FirstOrDefault(s => s.Id ==int.Parse(subId));
+                .Include(s => s.Subscriptions)
+               .FirstOrDefault(s => s.Id == int.Parse(subId));
             if (sub is null) return NotFound();
             var modelVm = mapper.Map<SubscriberDetailsVM>(sub);
             modelVm.key = _dataProtector.Protect(sub.Id.ToString());
@@ -106,6 +116,15 @@ namespace Bookify.Web.Controllers
             }
             subscriper.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
             context.Subscripers.Add(subscriper);
+            var subscription = new Subscriptions()
+            {
+                CreatedById = subscriper.CreatedById,
+                CreatedOn = subscriper.CreatedOn,
+                StartDate = DateTime.Today,
+                EndDate = DateTime.Today.AddYears(1),
+            };
+            subscriper.Subscriptions.Add(subscription);
+
             context.SaveChanges();
             var subId = _dataProtector.Protect(subscriper.Id.ToString());
             return RedirectToAction("Details", new { Id = subId });
@@ -121,7 +140,7 @@ namespace Bookify.Web.Controllers
             modelVm.SelectedGovernorate = subscriper.GovernreteId;
             modelVm.SelectedArea = subscriper.AreaId;
             modelVm.Key = id;
-           
+
 
             return View("Form", FillMolde(modelVm));
 
@@ -196,6 +215,60 @@ namespace Bookify.Web.Controllers
 
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RenewSubscription(string key)
+        {
+            var suId = int.Parse(_dataProtector.Unprotect(key));
+            var sub = context.Subscripers.Include(s => s.Subscriptions).FirstOrDefault(s => s.Id == suId);
+            if (sub is null) return NotFound();
+            if (sub.BlacListed) return BadRequest();
+            var lastSubscription = sub.Subscriptions.Last();
+            var startDate = lastSubscription.EndDate < DateTime.Today ? DateTime.Today
+                : lastSubscription.EndDate.AddDays(1);
+            var newSubscrtiption = new Subscriptions()
+            {
+                StartDate = startDate,
+                EndDate = startDate.AddYears(1),
+                CreatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value,
+                CreatedOn = DateTime.Now,
+            };
+
+            sub.Subscriptions.Add(newSubscrtiption);
+            context.SaveChanges();
+
+            //Send Email
+
+            var detailsUrl = Url.Action(
+            action: "Details",
+            controller: "Subscripers",
+            values: new { id = key }, 
+            protocol: Request.Scheme
+            );
+
+            var formattedEndDate = newSubscrtiption.EndDate.ToString("dd MMM yyyy");
+
+            var body = emailBodyBulider.GetBody(
+                "https://res.cloudinary.com/dhtvvjlko/image/upload/v1785683951/undraw_online-party_uybk_lpgvot.png",
+                $"Hello {sub.FirstName} {sub.LastName}!",
+                $"Your subscription has been successfully renewed until {formattedEndDate}.",
+                detailsUrl,            
+                "View Subscription Details" 
+            );
+
+            
+            await emailSender.SendEmailAsync(
+                sub.Email,
+                "Subscription Renewed Successfully 🎉",
+                body
+            );
+
+
+            var subVM = mapper.Map<SubscriptionsVM>(newSubscrtiption);
+            return PartialView("_SubscritpionRow", subVM);
+
+        }
+
         [AjaxFilter]
         public IActionResult GetAreasAjax(int Governorateid)
         {
@@ -208,7 +281,7 @@ namespace Bookify.Web.Controllers
         public IActionResult AllowEmail(SubscriperFormVM model)
         {
             var subId = 0;
-            if(!string.IsNullOrEmpty(model.Key)) subId= int.Parse(_dataProtector.Unprotect(model.Key));
+            if (!string.IsNullOrEmpty(model.Key)) subId = int.Parse(_dataProtector.Unprotect(model.Key));
             var sub = context.Subscripers.FirstOrDefault(s => s.Email == model.Email);
             var valid = sub is null || subId == sub.Id;
             return Json(valid);

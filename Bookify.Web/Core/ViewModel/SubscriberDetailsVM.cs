@@ -24,7 +24,9 @@ namespace Bookify.Web.Core.ViewModel
 
         public string? Address { get; set; }
 
-        
+        public IEnumerable<SubscriptionsVM>? subscriptions { get; set; } = new List<SubscriptionsVM>();
+        public bool BlacListed { get; set; }
+
 
     }
 }

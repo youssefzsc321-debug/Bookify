@@ -37,7 +37,9 @@ namespace Bookify.Web.Core.Models
         [MaxLength(500)]
         public string  Address { get; set; }
 
-        public bool BlacListed { get; set; } 
+        public bool BlacListed { get; set; }
+
+        public ICollection<Subscriptions>? Subscriptions { get; set; } = new List<Subscriptions>();
 
     }
 }

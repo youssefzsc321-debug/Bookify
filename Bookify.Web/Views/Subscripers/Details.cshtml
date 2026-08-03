@@ -2,33 +2,38 @@
 
 @{
     ViewData["Title"] = "Subscriber Details";
+
+    var lastSubStatus = Model.subscriptions?.LastOrDefault()?.Status;
+    var isActive = lastSubStatus == "Active";
+    var isBlackListed = Model.BlacListed; 
+
+    string membershipBgClass = isBlackListed ? "bg-danger" : (isActive ? "bg-primary" : "bg-warning");
+
+    string membershipTextClass = (isActive || isBlackListed) ? "text-white" : "text-gray-900";
+    string membershipSubTextClass = (isActive || isBlackListed) ? "text-white opacity-75" : "text-gray-700";
+
+    string membershipStatusText = isBlackListed ? "Black Listed" : (isActive ? "Active" : "Not Active");
 }
-
-
+<!--begin::Header Alert-->
 <div class="alert bg-light-primary d-flex flex-column flex-sm-row w-100 p-5 mb-10 border border-primary border-dashed align-items-center">
     <div class="symbol symbol-40px me-4 mb-5 mb-sm-0">
-        <div class="symbol-label fs-2 fw-semibold text-success">
-            <span class="svg-icon svg-icon-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.0173 9H15.3945C14.2833 9 13.263 9.61425 12.7431 10.5963L12.154 11.7091C12.0645 11.8781 12.1072 12.0868 12.2559 12.2071L12.6402 12.5183C13.2631 13.0225 13.7556 13.6691 14.0764 14.4035L14.2321 14.7601C14.2957 14.9058 14.4396 15 14.5987 15H18.6747C19.7297 15 20.4057 13.8774 19.912 12.945L18.6686 10.5963C18.1487 9.61425 17.1285 9 16.0173 9Z" fill="currentColor"></path>
-                    <rect opacity="0.3" x="14" y="4" width="4" height="4" rx="2" fill="currentColor"></rect>
-                    <path d="M4.65486 14.8559C5.40389 13.1224 7.11161 12 9 12C10.8884 12 12.5961 13.1224 13.3451 14.8559L14.793 18.2067C15.3636 19.5271 14.3955 21 12.9571 21H5.04292C3.60453 21 2.63644 19.5271 3.20698 18.2067L4.65486 14.8559Z" fill="currentColor"></path>
-                    <rect opacity="0.3" x="6" y="5" width="6" height="6" rx="3" fill="currentColor"></rect>
-                </svg>
-            </span>
+        <div class="symbol-label fs-2 fw-semibold text-primary">
+            <i class="bi bi-people-fill fs-2"></i>
         </div>
     </div>
     <div class="d-flex flex-column pe-0 pe-sm-10">
-        <h4 class="fw-bold text-primary mb-0">Subscribers</h4>
+        <h4 class="fw-bold text-primary mb-0">Subscriber Details</h4>
     </div>
     <div class="ms-sm-auto">
         <a asp-action="Edit" asp-controller="Subscripers" asp-route-id="@Model.key" class="btn btn-sm btn-primary">
-            <i class="bi bi-plus-square-dotted"></i> Edit
+            <i class="bi bi-pencil-square me-1"></i> Edit
         </a>
     </div>
 </div>
+<!--end::Header Alert-->
 
 <div class="d-flex flex-column flex-xl-row">
+    <!--begin::Sidebar-->
     <div class="flex-column flex-lg-row-auto w-100 w-xl-350px mb-10">
         <div class="card mb-5 mb-xl-8">
             <div class="card-body pt-15">
@@ -48,7 +53,7 @@
                     </a>
 
                     <div class="fs-5 fw-semibold text-muted mb-6">
-                        @(Model.Email ?? "No Email Provided")
+                        <i class="bi bi-envelope me-1 text-muted"></i>@(Model.Email ?? "No Email Provided")
                     </div>
                 </div>
 
@@ -56,55 +61,81 @@
 
                 <div class="pb-5 fs-6">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="fw-bold fs-5 text-gray-800">Details</div>
-                        <span class="badge badge-light-primary">Active</span>
+                        <div class="fw-bold fs-5 text-gray-800">
+                            <i class="bi bi-person-lines-fill me-1 text-primary"></i> Details
+                        </div>
+                        <span id="SubscriberStatusBadge" class="badge @(isBlackListed ? "badge-light-danger" : (isActive ? "badge-light-primary" : "badge-light-warning"))">
+                            @(isBlackListed ? "Black Listed" : (isActive ? "Active" : "Not Active"))
+                        </span>
                     </div>
 
-                    <div class="fw-bold mt-5 text-muted">Subscriber ID</div>
+                    <div class="fw-bold mt-5 text-muted">
+                        <i class="bi bi-hash me-1"></i> Subscriber ID
+                    </div>
                     <div class="text-gray-600">#@ViewData["Id"]</div>
 
-                    <div class="fw-bold mt-5 text-muted">National ID</div>
+                    <div class="fw-bold mt-5 text-muted">
+                        <i class="bi bi-card-heading me-1"></i> National ID
+                    </div>
                     <div class="text-gray-600">@(Model.NationalId ?? "N/A")</div>
 
-                    <div class="fw-bold mt-5 text-muted">Mobile Number</div>
+                    <div class="fw-bold mt-5 text-muted">
+                        <i class="bi bi-telephone me-1"></i> Mobile Number
+                    </div>
                     <div class="text-gray-600">@(Model.MobileNumber ?? "N/A")</div>
 
-                    <div class="fw-bold mt-5 text-muted">Date of Birth</div>
+                    <div class="fw-bold mt-5 text-muted">
+                        <i class="bi bi-calendar-event me-1"></i> Date of Birth
+                    </div>
                     <div class="text-gray-600">
                         @(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd MMM yyyy") : "N/A")
                     </div>
 
-                    <div class="fw-bold mt-5 text-muted">Governorate / Area</div>
+                    <div class="fw-bold mt-5 text-muted">
+                        <i class="bi bi-geo-alt me-1"></i> Governorate / Area
+                    </div>
                     <div class="text-gray-600">
                         @(!string.IsNullOrEmpty(Model.Governrete) ? Model.Governrete : "N/A")
                         @(!string.IsNullOrEmpty(Model.Area) ? $" / {Model.Area}" : "")
                     </div>
 
-                    <div class="fw-bold mt-5 text-muted">Address</div>
+                    <div class="fw-bold mt-5 text-muted">
+                        <i class="bi bi-house-door me-1"></i> Address
+                    </div>
                     <div class="text-gray-600">@(Model.Address ?? "N/A")</div>
                 </div>
             </div>
         </div>
     </div>
-
+    <!--end::Sidebar-->
+    <!--begin::Content-->
     <div class="flex-lg-row-fluid ms-lg-15">
+        <!--begin::Tabs-->
         <ul class="nav nav-custom nav-tabs nav-line-tabs nav-line-tabs-2x border-0 fs-4 fw-semibold mb-8">
             <li class="nav-item">
-                <a class="nav-link text-active-primary pb-4 active" data-bs-toggle="tab" href="#kt_subscriber_overview">Overview</a>
+                <a class="nav-link text-active-primary pb-4 active" data-bs-toggle="tab" href="#kt_subscriber_overview">
+                    <i class="bi bi-grid-1x2 me-2"></i> Overview
+                </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-active-primary pb-4" data-bs-toggle="tab" href="#kt_subscriber_rentals">Rentals / Activity</a>
+                <a class="nav-link text-active-primary pb-4" data-bs-toggle="tab" href="#kt_subscriber_rentals">
+                    <i class="bi bi-journal-bookmark me-2"></i> Rentals / Activity
+                </a>
             </li>
         </ul>
-
+        <!--end::Tabs-->
+        <!--begin::Tab Content-->
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="kt_subscriber_overview" role="tabpanel">
 
                 <div class="row g-5 g-xl-8 mb-8">
+                    <!--begin::Active Rentals Card-->
                     <div class="col-xl-6">
                         <div class="card bg-light-primary card-xl-stretch mb-xl-8">
                             <div class="card-body my-3">
-                                <span class="card-title fw-bold text-primary fs-3 mb-3 d-block">Active Rentals</span>
+                                <span class="card-title fw-bold text-primary fs-3 mb-3 d-block">
+                                    <i class="bi bi-book me-2"></i> Active Rentals
+                                </span>
                                 <div class="py-1">
                                     <span class="text-dark fw-bold fs-2hx me-2">2</span>
                                     <span class="fw-semibold text-muted fs-7">Books currently rented</span>
@@ -112,62 +143,80 @@
                             </div>
                         </div>
                     </div>
+                    <!--end::Active Rentals Card-->
+                    <!--begin::Membership Status Card-->
                     <div class="col-xl-6">
-                        <div class="card bg-primary card-xl-stretch mb-xl-8">
+                        <div class="card @membershipBgClass card-xl-stretch mb-xl-8">
                             <div class="card-body my-3">
-                                <span class="card-title fw-bold text-white fs-3 mb-3 d-block">Membership Status</span>
+                                <span class="card-title fw-bold @membershipTextClass fs-3 mb-3 d-block">
+                                    <i class="bi bi-shield-check me-2"></i> Membership Status
+                                </span>
                                 <div class="py-1">
-                                    <span class="text-white fw-bold fs-2hx me-2">Valid</span>
-                                    <span class="fw-semibold text-white opacity-75 fs-7">Tier Milestone Reached</span>
+                                    <span class="@membershipTextClass fw-bold fs-2hx me-2">@membershipStatusText</span>
+
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <!--end::Membership Status Card-->
                 </div>
 
+                <!--begin::Subscriptions History Card-->
                 <div class="card card-xl-stretch mb-5 mb-xl-8">
                     <div class="card-header border-0 pt-5">
                         <h3 class="card-title align-items-start flex-column">
-                            <span class="card-label fw-bold fs-3 mb-1">Rental History</span>
+                            <span class="card-label fw-bold fs-3 mb-1">
+                                <i class="bi bi-clock-history me-1 text-primary"></i> Subscriptions History
+                            </span>
                             <span class="text-muted mt-1 fw-semibold fs-7">Recent subscriber activity</span>
                         </h3>
+                        @if (!isBlackListed)
+                        {
+                            <div class="card-toolbar">
+                                <a href="javascript:;" class="btn btn-sm btn-light-primary js-reNew" data-key="@Model.key">
+                                    <i class="bi bi-arrow-repeat fs-3 me-1"></i> Renew
+                                </a>
+                            </div>
+                        }
                     </div>
+
                     <div class="card-body py-3">
                         <div class="table-responsive">
-                            <table class="table align-middle table-row-dashed fs-6 gy-5">
+                            <table class="table align-middle gs-0 gy-4" id="SubscriptionsTable">
                                 <thead>
-                                    <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
-                                        <th>Book Title</th>
-                                        <th>Status</th>
-                                        <th>Rental Date</th>
-                                        <th>Return Date</th>
+                                    <tr class="fw-bold text-muted bg-light">
+                                        <th class="ps-4 min-w-125px rounded-start">Start Date</th>
+                                        <th class="min-w-125px">End Date</th>
+                                        <th class="min-w-150px">Status</th>
+                                        <th class="min-w-125px text-end rounded-end pe-4">Created On</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-gray-600 fw-semibold">
-                                    <tr>
-                                        <td>Clean Code</td>
-                                        <td><span class="badge badge-light-success">Returned</span></td>
-                                        <td>10 May 2024</td>
-                                        <td>24 May 2024</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C# in Depth</td>
-                                        <td><span class="badge badge-light-warning">Rented</span></td>
-                                        <td>01 Jun 2024</td>
-                                        <td>15 Jun 2024</td>
-                                    </tr>
+                                <tbody>
+                                    @if (Model.subscriptions != null && Model.subscriptions.Any())
+                                    {
+                                        @foreach (var sub in Model.subscriptions)
+                                        {
+                                            <partial name="_SubscritpionRow" model="@sub" />
+                                        }
+                                    }
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+                <!--end::Subscriptions History Card-->
 
             </div>
         </div>
+        <!--end::Tab Content-->
     </div>
+    <!--end::Content-->
 </div>
+
+@Html.AntiForgeryToken()
 
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Subscriptions.js" asp-append-version="true"></script>
 }

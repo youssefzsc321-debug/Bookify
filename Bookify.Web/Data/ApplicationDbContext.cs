@@ -21,6 +21,7 @@ namespace Bookify.Web.Data
         public DbSet<Governrete> Governretes { get; set; }
         public DbSet<Area> Areas { get; set; }
         public DbSet<Subscriper> Subscripers { get; set; }
+        public DbSet<Subscriptions> Subscriptions { get; set; }
 
 
 

@@ -1,0 +1,14 @@
+﻿@model SubscriptionsVM
+<tr>
+    <td class="ps-4">@Model.StartDate.ToString("dd MMM yyyy")</td>
+    <td>@Model.EndDate.ToString("dd MMM yyyy")</td>
+    <td>
+        @if (!string.IsNullOrEmpty(Model.Status))
+        {
+            <span class="badge @(Model.Status == "Expired" ? "badge-light-danger" : Model.Status == "Active" ? "badge-light-success" : "badge-light-warning")">
+                @Model.Status
+            </span>
+        }
+    </td>
+    <td class="text-end pe-4">@Model.CreatedOn.ToString("dd MMM yyyy")</td>
+</tr>
