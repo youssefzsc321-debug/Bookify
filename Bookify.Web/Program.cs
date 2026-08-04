@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Threading.Tasks;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
+using WhatsAppCloudApi.Extensions;
 
 namespace Bookify.Web
 {
@@ -69,6 +70,7 @@ namespace Bookify.Web
             {
                 options.ValidationInterval = TimeSpan.Zero;
             });
+            builder.Services.AddWhatsAppApiClient(builder.Configuration);
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

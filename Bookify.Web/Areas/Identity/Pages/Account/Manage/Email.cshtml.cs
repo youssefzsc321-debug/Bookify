@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
 using Bookify.Web.Services;
 using Microsoft.AspNetCore.Identity;
@@ -129,11 +130,21 @@ namespace Bookify.Web.Areas.Identity.Pages.Account.Manage
                     values: new { area = "Identity", userId = userId, email = Input.NewEmail, code = code },
                     protocol: Request.Scheme);
 
-                var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png",
-                  $"Hello {user.FullName}",
-                  "Please click the below button to confirm Change",
-                  $"{HtmlEncoder.Default.Encode(callbackUrl)}",
-                  "Confirm Email");
+                //var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png",
+                //  $"Hello {user.FullName}",
+                //  "Please click the below button to confirm Change",
+                //  $"{HtmlEncoder.Default.Encode(callbackUrl)}",
+                //  "Confirm Email");
+                var placeholders = new Dictionary<string, string>()
+                {
+                    { "[imageUrl]","https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png" },
+                    {"[header]",$"Hello {user.FullName}" },
+                    {"[body]", "Please click the below button to confirm Change"},
+                    {"[url]",$"{HtmlEncoder.Default.Encode(callbackUrl)}" },
+                    { "[linkTitle]","Confirm Email"}
+                };
+                var body = emailBodyBulider.GetBody(EmailTempletes.Email, placeholders);
+
                 await _emailSender.SendEmailAsync(
                     Input.NewEmail,
                     "Confirm your email",

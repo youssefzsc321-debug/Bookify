@@ -162,13 +162,17 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function () {
-            // Flatpickr setup
+            // 1. Flatpickr setup
             $("#kt_datepicker_1").flatpickr({
                 dateFormat: "d-m-Y",
                 maxDate: "today"
             });
 
-            // Fill The Area List
+            $('#SelectedGovernorate, #SelectedArea').on('change', function () {
+                $(this).valid();
+            });
+
+            // 3. Fill The Area List
             $('#SelectedGovernorate').on('change', function () {
 
                 var governorateId = $(this).val();
@@ -185,6 +189,7 @@
                                 var newOption = '<option value="' + area.value + '">' + area.text + '</option>';
                                 areaList.append(newOption);
                             });
+                            areaList.valid();
                         },
                         error: function () {
                             showErrorMessage();

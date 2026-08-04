@@ -14,8 +14,10 @@ namespace Bookify.Web.Core.ViewModel
         public string? Key { get; set; }
 
         [MaxLength(100)]
+        [Display(Name = "First Name")]
         public string FirstName { get; set; }
         [MaxLength(100)]
+        [Display(Name = "Last Name")]
         public string LastName { get; set; }
 
         [AssertThat("DateOfBirth <=Today()", ErrorMessage = Errors.NotAllowFuteruData)]
@@ -48,9 +50,11 @@ namespace Bookify.Web.Core.ViewModel
         public string? imageThumbnailUrl { get; set; }
 
 
+        [Display(Name = "Area")]
         public int SelectedArea { get; set; }
         public IEnumerable<SelectListItem>? Areas { get; set; }
-        
+
+        [Display(Name = "Governorate")]
         public int SelectedGovernorate { get; set; }
         public IEnumerable<SelectListItem>? Governorates { get; set; }
         

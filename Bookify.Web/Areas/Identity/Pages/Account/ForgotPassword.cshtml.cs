@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
 using Bookify.Web.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -74,11 +75,24 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
-                var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png",
-                   $"Hello {user.FullName}",
-                   "Please click the below button to reset your password",
-                   $"{HtmlEncoder.Default.Encode(callbackUrl)}",
-                   "Reset Password");
+                //var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png",
+                //   $"Hello {user.FullName}",
+                //   "Please click the below button to reset your password",
+                //   $"{HtmlEncoder.Default.Encode(callbackUrl)}",
+                //   "Reset Password");
+
+                var placeholders = new Dictionary<string, string>();
+                placeholders.Add("[imageUrl]", "https://res.cloudinary.com/dhtvvjlko/image/upload/v1785135978/confirmed_hc5dxf.png");
+                placeholders.Add("[header]", $"Hello {user.FullName}");
+                placeholders.Add("[body]", $"Please click the below button to reset your password");
+                placeholders.Add("[url]", $"{HtmlEncoder.Default.Encode(callbackUrl)}");
+                placeholders.Add("[linkTitle]", "Reset Password");
+
+
+                var body = emailBodyBulider.GetBody(EmailTempletes.Email, placeholders);
+
+
+                
 
                 await _emailSender.SendEmailAsync(
                     Input.Email,

@@ -5,16 +5,20 @@ using Bookify.Web.Services;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using WhatsAppCloudApi;
+using WhatsAppCloudApi.Services;
 
 namespace Bookify.Web.Controllers
 {
@@ -27,8 +31,10 @@ namespace Bookify.Web.Controllers
         private readonly IImageService imageService;
         private readonly IEmailSender emailSender;
         private readonly IEmailBodyBulider emailBodyBulider;
+        private readonly IWhatsAppClient whatsAppClient;
+        private readonly IWebHostEnvironment webHostEnvironment;
 
-        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService, IDataProtectionProvider dataProtector, IEmailSender emailSender, IEmailBodyBulider emailBodyBulider)
+        public SubscripersController(ApplicationDbContext context, IMapper mapper, IImageService imageService, IDataProtectionProvider dataProtector, IEmailSender emailSender, IEmailBodyBulider emailBodyBulider, IWhatsAppClient whatsAppClient, IWebHostEnvironment webHostEnvironment)
         {
             this.context = context;
             this.mapper = mapper;
@@ -36,8 +42,10 @@ namespace Bookify.Web.Controllers
             _dataProtector = dataProtector.CreateProtector("MySecureKey");
             this.emailSender = emailSender;
             this.emailBodyBulider = emailBodyBulider;
+            this.whatsAppClient = whatsAppClient;
+            this.webHostEnvironment = webHostEnvironment;
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             return View();
         }
@@ -124,8 +132,39 @@ namespace Bookify.Web.Controllers
                 EndDate = DateTime.Today.AddYears(1),
             };
             subscriper.Subscriptions.Add(subscription);
-
             context.SaveChanges();
+            //Send Email
+            var placeholders = new Dictionary<string, string>() 
+            {
+                {"[logoUrl]","https://res.cloudinary.com/dhtvvjlko/image/upload/v1784985004/logo_xxv8zk.png" },
+                {"[header]",$"Welcome aboard, {model.FirstName} {model.LastName}!" },
+                {"[body]","We're thrilled to have you with us. Enjoy exploring everything Bookify has to offer!" }
+            };
+            var body = emailBodyBulider.GetBody(EmailTempletes.Notification, placeholders);
+            await emailSender.SendEmailAsync(model.Email, "Welcome to Bookify! 👋", body);
+
+            //Send Whatsapp message
+            if (model.HasWhatsApp)
+            {
+
+                var components = new List<WhatsAppComponent>()
+                {
+                    new WhatsAppComponent
+                    {
+                        Type="header",
+                        Parameters=new List<object>()
+                        {
+                            new WhatsAppTextParameter{Text="Youssef"}
+                        }
+                    }
+                };
+                var mobileNumber = (webHostEnvironment.IsDevelopment() ? "01202984092" : model.MobileNumber);
+
+                var res = await whatsAppClient
+                    .SendMessage($"2{mobileNumber}", WhatsAppLanguageCode.English_US, WhatsAppTempletes.WelcomeTemp, components);
+
+            }
+
             var subId = _dataProtector.Protect(subscriper.Id.ToString());
             return RedirectToAction("Details", new { Id = subId });
         }
@@ -242,21 +281,32 @@ namespace Bookify.Web.Controllers
             var detailsUrl = Url.Action(
             action: "Details",
             controller: "Subscripers",
-            values: new { id = key }, 
+            values: new { id = key },
             protocol: Request.Scheme
             );
 
             var formattedEndDate = newSubscrtiption.EndDate.ToString("dd MMM yyyy");
 
-            var body = emailBodyBulider.GetBody(
-                "https://res.cloudinary.com/dhtvvjlko/image/upload/v1785683951/undraw_online-party_uybk_lpgvot.png",
-                $"Hello {sub.FirstName} {sub.LastName}!",
-                $"Your subscription has been successfully renewed until {formattedEndDate}.",
-                detailsUrl,            
-                "View Subscription Details" 
-            );
+            //var body = emailBodyBulider.GetBody(
+            //    "https://res.cloudinary.com/dhtvvjlko/image/upload/v1785683951/undraw_online-party_uybk_lpgvot.png",
+            //    $"Hello {sub.FirstName} {sub.LastName}!",
+            //    $"Your subscription has been successfully renewed until {formattedEndDate}.",
+            //    detailsUrl,
+            //    "View Subscription Details"
+            //);
 
-            
+            var placeholders = new Dictionary<string, string>()
+                {
+                    { "[imageUrl]","https://res.cloudinary.com/dhtvvjlko/image/upload/v1785683951/undraw_online-party_uybk_lpgvot.png" },
+                    {"[header]",$"Hello {sub.FirstName} {sub.LastName}!" },
+                    {"[body]", $"Your subscription has been successfully renewed until {formattedEndDate}."},
+                    {"[url]",detailsUrl},
+                    { "[linkTitle]", "View Subscription Details"}
+                };
+            var body = emailBodyBulider.GetBody(EmailTempletes.Email, placeholders);
+
+
+
             await emailSender.SendEmailAsync(
                 sub.Email,
                 "Subscription Renewed Successfully 🎉",

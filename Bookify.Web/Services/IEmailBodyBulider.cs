@@ -4,6 +4,6 @@ namespace Bookify.Web.Services
 {
     public interface IEmailBodyBulider
     {
-        public string GetBody(string imageUrl,string header,string body,string url,string linkTitle);
+        public string GetBody(string templete, Dictionary<string, string> placeholders);
     }
 }

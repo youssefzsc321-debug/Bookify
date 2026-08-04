@@ -102,14 +102,26 @@ namespace Bookify.Web.Controllers
                     values: new { area = "Identity", userId = newUser.Id, code = code},
                     protocol: Request.Scheme);
 
-              
-              
-                var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png",
-                    $"Hello {newUser.FullName},Thanks for joining us",
-                    "Please Confirm Eamil", $"{HtmlEncoder.Default.Encode(callbackUrl)}",
-                    "Acvtive account");
-  
-                 
+
+
+                //var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png",
+                //    $"Hello {newUser.FullName},Thanks for joining us",
+                //    "Please Confirm Eamil", $"{HtmlEncoder.Default.Encode(callbackUrl)}",
+                //    "Acvtive account");
+                var placeholders = new Dictionary<string, string>()
+                {
+                    { "[imageUrl]","https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png" },
+                    {"[header]",$"Hello {newUser.FullName},Thanks for joining us" },
+                    {"[body]", "Please Confirm Eamil"},
+                    {"[url]",$"{HtmlEncoder.Default.Encode(callbackUrl)}" },
+                    { "[linkTitle]","Acvtive account"}
+                };
+                var body = emailBodyBulider.GetBody(EmailTempletes.Email, placeholders);
+
+
+
+
+
 
                 await _emailSender.SendEmailAsync(newUser.Email, "Confirm your email",body);
 

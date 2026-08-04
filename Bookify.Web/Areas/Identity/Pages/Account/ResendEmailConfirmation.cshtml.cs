@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
 using Bookify.Web.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -89,11 +90,21 @@ namespace Bookify.Web.Areas.Identity.Pages.Account
                 values: new { userId = userId, code = code },
                 protocol: Request.Scheme);
 
-            
-            var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png",
-                   $"Hello {user.FullName},Thanks for joining us",
-                   "Please Confirm Eamil", $"{HtmlEncoder.Default.Encode(callbackUrl)}",
-                   "Acvtive account");
+
+            //var body = emailBodyBulider.GetBody("https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png",
+            //       $"Hello {user.FullName},Thanks for joining us",
+            //       "Please Confirm Eamil", $"{HtmlEncoder.Default.Encode(callbackUrl)}",
+            //       "Acvtive account");
+
+            var placeholders = new Dictionary<string, string>()
+                {
+                    { "[imageUrl]","https://res.cloudinary.com/dhtvvjlko/image/upload/v1785055846/Hello-rafiki_vuxaue.png" },
+                    {"[header]",$"Hello {user.FullName},Thanks for joining us" },
+                    {"[body]", "Please Confirm Eamil"},
+                    {"[url]",$"{HtmlEncoder.Default.Encode(callbackUrl)}" },
+                    { "[linkTitle]","Acvtive account"}
+                };
+            var body = emailBodyBulider.GetBody(EmailTempletes.Email, placeholders);
 
             await _emailSender.SendEmailAsync(
                user.Email,

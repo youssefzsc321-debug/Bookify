@@ -11,19 +11,17 @@ namespace Bookify.Web.Services
         {
             _webHostEnvironment=webHostEnvironment;
         }
-        public string GetBody(string imageUrl, string header, string body, string url, string linkTitle)
+        public string GetBody(string templete,Dictionary<string,string>placeholders)
         {
-            var filPath = $"{_webHostEnvironment.WebRootPath}/templates/email.html";
+            var filPath = $"{_webHostEnvironment.WebRootPath}/templates/{templete}.html";
             StreamReader streamReader = new StreamReader(filPath);
             var Body = streamReader.ReadToEnd();
             streamReader.Close();
 
-
-            Body = Body.Replace("[imageUrl]", imageUrl)
-                .Replace("[header]",header)
-                .Replace("[body]", body)
-                .Replace("[url]", url)
-                .Replace("[linkTitle]",linkTitle);
+            foreach(var placeholder in placeholders)
+            {
+               Body=Body.Replace(placeholder.Key, placeholder.Value); 
+            }
 
             return Body;
         }
