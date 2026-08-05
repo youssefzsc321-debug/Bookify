@@ -3,6 +3,7 @@ using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
 using Bookify.Web.Services;
 using CloudinaryDotNet.Actions;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System;
 using System.Security.Claims;
@@ -134,14 +136,15 @@ namespace Bookify.Web.Controllers
             subscriper.Subscriptions.Add(subscription);
             context.SaveChanges();
             //Send Email
-            var placeholders = new Dictionary<string, string>() 
+            var placeholders = new Dictionary<string, string>()
             {
                 {"[logoUrl]","https://res.cloudinary.com/dhtvvjlko/image/upload/v1784985004/logo_xxv8zk.png" },
                 {"[header]",$"Welcome aboard, {model.FirstName} {model.LastName}!" },
                 {"[body]","We're thrilled to have you with us. Enjoy exploring everything Bookify has to offer!" }
             };
             var body = emailBodyBulider.GetBody(EmailTempletes.Notification, placeholders);
-            await emailSender.SendEmailAsync(model.Email, "Welcome to Bookify! 👋", body);
+            BackgroundJob.Enqueue(() => emailSender.SendEmailAsync(model.Email, "Welcome to Bookify! 👋", body));
+
 
             //Send Whatsapp message
             if (model.HasWhatsApp)
@@ -154,14 +157,15 @@ namespace Bookify.Web.Controllers
                         Type="header",
                         Parameters=new List<object>()
                         {
-                            new WhatsAppTextParameter{Text="Youssef"}
+                            new WhatsAppTextParameter{Text=model.FirstName}
                         }
                     }
                 };
                 var mobileNumber = (webHostEnvironment.IsDevelopment() ? "01202984092" : model.MobileNumber);
 
-                var res = await whatsAppClient
-                    .SendMessage($"2{mobileNumber}", WhatsAppLanguageCode.English_US, WhatsAppTempletes.WelcomeTemp, components);
+
+                BackgroundJob.Enqueue(() => whatsAppClient
+                    .SendMessage($"2{mobileNumber}", WhatsAppLanguageCode.English, WhatsAppTempletes.WelcomeTemp, components));
 
             }
 
@@ -234,6 +238,7 @@ namespace Bookify.Web.Controllers
 
         }
 
+        
 
         private SubscriperFormVM FillMolde(SubscriperFormVM? modle = null)
         {
@@ -305,13 +310,42 @@ namespace Bookify.Web.Controllers
                 };
             var body = emailBodyBulider.GetBody(EmailTempletes.Email, placeholders);
 
+            BackgroundJob.Enqueue(() => emailSender.SendEmailAsync(sub.Email, "Subscription Renewed Successfully 🎉", body));
+
+            if (sub.HasWhatsApp)
+            {
+                var formaatingDate = sub.Subscriptions.LastOrDefault().EndDate.ToString("dd MMM yyyy");
+
+                var components = new List<WhatsAppComponent>()
+                {
+                    new WhatsAppComponent
+                    {
+                        Type="body",
+                        Parameters=new List<object>()
+                        {
+                            new WhatsAppTextParameter{Text=sub.FirstName},
+                            new WhatsAppTextParameter{Text=formaatingDate}
+                        }
+                    }
+                };
+                var mobileNumber = (webHostEnvironment.IsDevelopment() ? "01202984092" : sub.MobileNumber);
 
 
-            await emailSender.SendEmailAsync(
-                sub.Email,
-                "Subscription Renewed Successfully 🎉",
-                body
-            );
+                BackgroundJob.Enqueue(() => whatsAppClient
+                    .SendMessage($"2{mobileNumber}", WhatsAppLanguageCode.English, WhatsAppTempletes.RenewMessage, components));
+
+            }
+
+
+
+            //var DateOfTheDayBforeTwoDAys = newSubscrtiption.EndDate.AddDays(-2);
+            //var SendEmailAfter = DateOfTheDayBforeTwoDAys - DateTime.Now;
+            //if (SendEmailAfter > TimeSpan.Zero)
+            //{
+            //    BackgroundJob.Schedule(() => emailSender.SendEmailAsync(sub.Email, "Your subscription will finnised after 2 days", body), SendEmailAfter);
+            //}
+
+
 
 
             var subVM = mapper.Map<SubscriptionsVM>(newSubscrtiption);

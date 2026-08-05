@@ -3,9 +3,10 @@
 @{
     ViewData["Title"] = "subscribers";
 }
+
 <div class="card shadow-sm">
     <div class="card-header">
-        <h3 class="card-title">@(string.IsNullOrEmpty(Model.Key)? "Add Subscriber" : "Edit Subscriber")</h3>
+        <h3 class="card-title">@(string.IsNullOrEmpty(Model.Key) ? "Add Subscriber" : "Edit Subscriber")</h3>
     </div>
     <div class="card-body p-lg-10">
         <form asp-action="@(string.IsNullOrEmpty(Model.Key) ? "Create" : "Edit")" method="post" enctype="multipart/form-data" id="SubscriberForm">
@@ -48,8 +49,6 @@
                             <i class="bi bi-x fs-2"></i>
                         </span>
 
-                        
-                        
                     </div>
                     <div class="form-text fs-7 text-muted mt-2">Allowed file types: png, jpg, jpeg.</div>
                     <span asp-validation-for="Image" class="text-danger d-block mt-1"></span>
@@ -122,13 +121,13 @@
                 <div class="col-lg-9">
                     <div class="row">
                         <div class="col-lg-6 fv-row mb-3 mb-lg-0">
-                            <select asp-for="SelectedGovernorate" asp-items="Model.Governorates" class="form-select form-select-solid form-select-lg" id="SelectedGovernorate" data-control="select2" data-placeholder="Select a governorate ...">
+                            <select asp-for="SelectedGovernorate" asp-items="Model.Governorates" class="form-select form-select-solid form-select-lg js-select2" id="SelectedGovernorate" data-control="select2" data-placeholder="Select a governorate ...">
                                 <option value=""></option>
                             </select>
                             <span asp-validation-for="SelectedGovernorate" class="text-danger"></span>
                         </div>
                         <div class="col-lg-6 fv-row">
-                            <select asp-for="SelectedArea" asp-items="Model.Areas" class="form-select form-select-solid form-select-lg" id="SelectedArea" data-control="select2" data-placeholder="Select an area...">
+                            <select asp-for="SelectedArea" asp-items="Model.Areas" class="form-select form-select-solid form-select-lg js-select2" id="SelectedArea" data-control="select2" data-placeholder="Select an area...">
                                 <option value=""></option>
                             </select>
                             <span asp-validation-for="SelectedArea" class="text-danger"></span>
@@ -146,11 +145,14 @@
                 </div>
             </div>
 
-            <!-- Footer Buttons -->
+            <!-- Footer Buttons with Spinner Support -->
             <div class="d-flex justify-content-end pt-6">
                 <a asp-action="Index" class="btn btn-light me-3">Cancel</a>
                 <button type="submit" class="btn btn-primary">
                     <span class="indicator-label">Save Changes</span>
+                    <span class="indicator-progress">
+                        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
                 </button>
             </div>
 
@@ -172,9 +174,8 @@
                 $(this).valid();
             });
 
-            // 3. Fill The Area List
+            // 2. Fill The Area List
             $('#SelectedGovernorate').on('change', function () {
-
                 var governorateId = $(this).val();
                 var areaList = $('#SelectedArea');
                 areaList.empty();
