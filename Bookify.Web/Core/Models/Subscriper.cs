@@ -40,6 +40,9 @@ namespace Bookify.Web.Core.Models
         public bool BlacListed { get; set; }
 
         public ICollection<Subscriptions>? Subscriptions { get; set; } = new List<Subscriptions>();
+        public ICollection<Rental>? Rentals { get; set; } = new List<Rental>();
+
+
 
     }
 }

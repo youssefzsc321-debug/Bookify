@@ -20,6 +20,8 @@ namespace Bookify.Web.Data
         public DbSet<BookCopy> BookCopies { get; set; }
         public DbSet<Governrete> Governretes { get; set; }
         public DbSet<Area> Areas { get; set; }
+        public DbSet<Rental> Rentals { get; set; }
+        public DbSet<RentalCopies> RentalCopies { get; set; }
         public DbSet<Subscriper> Subscripers { get; set; }
         public DbSet<Subscriptions> Subscriptions { get; set; }
 
@@ -44,6 +46,7 @@ namespace Bookify.Web.Data
 
             builder.Entity<Governrete>().ToTable("Governorates");
             builder.Entity<Area>().Property(e => e.GovernreteId).HasColumnName("GovernorateId");
+            builder.Entity<RentalCopies>().HasKey(x => new { x.RentalId, x.BookCopyId });
 
           
 

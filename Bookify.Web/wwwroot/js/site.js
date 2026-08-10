@@ -11,10 +11,19 @@ function showSuccessMessage(message = (updatedRow === undefined ? 'Saved success
 }
 
 function showErrorMessage(message = 'Something went wrong!') {
+    var errorText = 'Something went wrong!';
+
+    if (typeof message === 'object' && message !== null) {
+        errorText = message.responseText || errorText;
+    }
+    else if (typeof message === 'string' && message.trim() !== '') {
+        errorText = message;
+    }
+
     Swal.fire({
         icon: 'error',
         title: 'Oops...',
-        text: message,
+        text: errorText,
         customClass: {
             confirmButton: "btn btn-outline btn-outline-dashed btn-outline-primary btn-active-light-primary"
         }
@@ -46,8 +55,8 @@ function OnModalSuccess(row) {
 function OnModalBegin() {
     $('#Modal').find('button[type="submit"]').attr('disabled', 'disabled').attr('data-kt-indicator', 'on');
 
-
 }
+
 
 function OnModalComplete() {
     $('#Modal').find('button[type="submit"]').removeAttr('disabled').removeAttr('data-kt-indicator');

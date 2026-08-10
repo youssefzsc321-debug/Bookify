@@ -1,4 +1,43 @@
-﻿$(document).ready(function () {
+﻿
+
+
+function OnAddSubsccriptionSuccess(rowHtml) {
+    $('#Modal').modal('hide');
+
+    if (typeof showSuccessMessage === "function") {
+        showSuccessMessage("Subscription added successfully!");
+    }
+
+    $('#cardTable').removeClass('d-none');
+
+    $('#SubscriptionsTable tbody').prepend(rowHtml);
+
+    $('#SubscriberStatusBadge')
+        .removeClass('badge-light-warning badge-light-danger')
+        .addClass('badge-light-primary')
+        .text('Active');
+    $('#SubscriberStatusBadge')
+        .removeClass('badge-light-warning badge-light-danger')
+        .addClass('badge-light-primary')
+        .text('Active');
+
+    $('#MembershipCard')
+        .removeClass('bg-warning bg-danger')
+        .addClass('bg-primary');
+
+    $('#MembershipTitle, #MembershipStatusText')
+        .removeClass('text-gray-900')
+        .addClass('text-white');
+
+    $('#MembershipStatusText').text('Active');
+
+    $('.js-addSubsctiption').addClass('d-none');
+
+    $('#RentalToolbar').removeClass('d-none');
+    $('.js-reNew').removeClass('d-none');
+}
+
+$(document).ready(function () {
     $('.js-reNew').on('click', function (e) {
         e.preventDefault();
 
@@ -38,7 +77,7 @@
                         var $newRow = $(responseRowHtml);
                         $('#SubscriptionsTable tbody').append($newRow);
 
-                        var newStatus = $newRow.find('.badge').text().trim(); 
+                        var newStatus = $newRow.find('.badge').text().trim();
 
                         var statusBadge = $('#SubscriberStatusBadge');
                         var membershipCard = $('.card-xl-stretch').filter(function () {
@@ -55,15 +94,22 @@
                             membershipText.addClass('text-white').text('Active');
                             statusBadge.addClass('badge-light-primary').text('Active');
 
+                            
+                            $('#RentalToolbar').removeClass('d-none');
+
                         } else if (newStatus === 'Not Started' || newStatus === 'Expired') {
                             membershipCard.addClass('bg-warning');
                             membershipText.addClass('text-gray-900').text('Not Active');
                             statusBadge.addClass('badge-light-warning').text('Not Active');
 
+                            $('#RentalToolbar').addClass('d-none');
+
                         } else if (newStatus === 'Black Listed') {
                             membershipCard.addClass('bg-danger');
                             membershipText.addClass('text-white').text('Black Listed');
                             statusBadge.addClass('badge-light-danger').text('Black Listed');
+
+                            $('#RentalToolbar').addClass('d-none');
                         }
 
                         Swal.fire({
@@ -92,6 +138,31 @@
                         });
                     }
                 });
+            }
+        });
+    });
+
+    $('.js-addSubsctiption').on('click', function () {
+        var btn = $(this);
+        var subscriberKey = btn.data('key');
+        var modal = $('#Modal');
+
+        modal.find('#ModalLabel').text("Add Subscription");
+
+        $.ajax({
+            url: '/Subscripers/AddSubscription/' + subscriberKey,
+            type: 'GET',
+            success: function (formHtml) {
+                modal.find('.modal-body').html(formHtml);
+
+                $.validator.unobtrusive.parse("#ModalForm");
+
+                modal.modal('show');
+            },
+            error: function () {
+                if (typeof showErrorMessage === "function") {
+                    showErrorMessage("Failed to load subscription form!");
+                }
             }
         });
     });

@@ -1,0 +1,51 @@
+﻿@model SubscitpionFormVm
+
+<form asp-action="AddSubscription" asp-controller="Subscripers" method="post" id="ModalForm"
+      data-ajax-method="Post"
+      data-ajax="true"
+      data-ajax-success="OnAddSubsccriptionSuccess"
+      data-ajax-begin="OnModalBegin"
+      data-ajax-failure="showErrorMessage"
+      data-ajax-complete="OnModalComplete">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="SubscriperId" />
+
+    <!-- Title & Subtitle -->
+    <div class="mb-13 text-center">
+        <h1 class="mb-3 fw-bold text-dark">
+            <i class="bi bi-card-checklist text-primary fs-1 me-2"></i>New Subscription
+        </h1>
+        <div class="text-muted fw-semibold fs-6">
+            Create the first subscription for this subscriber.
+        </div>
+    </div>
+
+    <!-- Start Date Field -->
+    <div class="d-flex flex-column mb-8 fv-row">
+        <label class="d-flex align-items-center fs-6 fw-semibold mb-2">
+            <span class="required">Start Date</span>
+        </label>
+        <div class="position-relative d-flex align-items-center">
+            <i class="bi bi-calendar-event position-absolute ms-4 fs-3 text-gray-500"></i>
+            <input asp-for="StartDate"
+                   type="date"
+                   class="form-control form-control-solid ps-12 fs-6 fw-semibold"
+                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        </div>
+        <span asp-validation-for="StartDate" class="text-danger mt-1 fs-7"></span>
+    </div>
+
+    <!-- Info Box -->
+    <div class="notice d-flex bg-light-primary rounded border-primary border border-dashed p-6 mb-8">
+        <i class="bi bi-shield-check fs-2tx text-primary me-4"></i>
+        <div class="d-flex flex-stack flex-grow-1">
+            <div class="fw-semibold">
+                <h4 class="text-gray-900 fw-bold fs-6">Subscription Period</h4>
+                <div class="fs-7 text-gray-600">
+                    This subscription will automatically be active for 1 full year from the selected start date.
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

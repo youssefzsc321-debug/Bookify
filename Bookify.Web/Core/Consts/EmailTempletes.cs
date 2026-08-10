@@ -5,5 +5,6 @@
         public const string Email= "email";
         public const string Notification= "notification";
         public const string ExpirationEmail = "ExpirationEmail";
+        public const string AddSubscription = "AddSubscription";
     }
 }

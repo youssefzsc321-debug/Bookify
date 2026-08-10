@@ -40,7 +40,7 @@ namespace Bookify.Web.BackgroungJobs
         public async Task PrepareExpirationAlert()
         {
             var subs = context.Subscripers.Include(s => s.Subscriptions)
-                .Where(s => s.Subscriptions.OrderByDescending(s => s.EndDate)
+                .Where(s =>!s.BlacListed&& s.Subscriptions.OrderByDescending(s => s.EndDate)
                 .FirstOrDefault().EndDate.AddDays(-5) == DateTime.Today).ToList();
 
 

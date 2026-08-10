@@ -14,6 +14,8 @@ namespace Bookify.Web.Core.Models
         public int EditionNumber { get; set; }
         public int SerialNumber { get; set; }
 
-        
+        public ICollection<RentalCopies>? RentalCopies { get; set; } = new List<RentalCopies>();
+
+
     }
 }

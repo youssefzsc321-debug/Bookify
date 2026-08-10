@@ -24,6 +24,8 @@
         public const string NotAllowedPhone = "Please enter a valid Egyptian mobile number (11 digits starting with 010, 011, 012, or 015).";
 
         public const string NotAllowedNationlaId = "Invalid Egyptian National ID.";
+        public const string BookCopyNotFound = "Invalid Serail Number!";
+        public const string BookCopyNotAvaliableForRental = "Not Avaliable for retnal!";
 
     }
 }

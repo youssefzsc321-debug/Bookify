@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -81,6 +82,8 @@ namespace Bookify.Web.Controllers
                 .Include(s => s.Area)
                 .Include(s => s.Governrete)
                 .Include(s => s.Subscriptions)
+                .Include(s => s.Rentals)
+                .ThenInclude(s => s.RentalCopies)
                .FirstOrDefault(s => s.Id == int.Parse(subId));
             if (sub is null) return NotFound();
             var modelVm = mapper.Map<SubscriberDetailsVM>(sub);
@@ -126,14 +129,7 @@ namespace Bookify.Web.Controllers
             }
             subscriper.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
             context.Subscripers.Add(subscriper);
-            var subscription = new Subscriptions()
-            {
-                CreatedById = subscriper.CreatedById,
-                CreatedOn = subscriper.CreatedOn,
-                StartDate = DateTime.Today,
-                EndDate = DateTime.Today.AddYears(1),
-            };
-            subscriper.Subscriptions.Add(subscription);
+
             context.SaveChanges();
             //Send Email
             var placeholders = new Dictionary<string, string>()
@@ -238,7 +234,7 @@ namespace Bookify.Web.Controllers
 
         }
 
-        
+
 
         private SubscriperFormVM FillMolde(SubscriperFormVM? modle = null)
         {
@@ -267,7 +263,7 @@ namespace Bookify.Web.Controllers
             var sub = context.Subscripers.Include(s => s.Subscriptions).FirstOrDefault(s => s.Id == suId);
             if (sub is null) return NotFound();
             if (sub.BlacListed) return BadRequest();
-            var lastSubscription = sub.Subscriptions.Last();
+            var lastSubscription = sub.Subscriptions.LastOrDefault();
             var startDate = lastSubscription.EndDate < DateTime.Today ? DateTime.Today
                 : lastSubscription.EndDate.AddDays(1);
             var newSubscrtiption = new Subscriptions()
@@ -386,6 +382,57 @@ namespace Bookify.Web.Controllers
             var valid = sub is null || subId == sub.Id;
             return Json(valid);
         }
+
+        [HttpGet]
+        [AjaxFilter]
+        public IActionResult AddSubscription(string id)
+        {
+            var subId = int.Parse(_dataProtector.Unprotect(id));
+            var sub = context.Subscripers.Include(s => s.Subscriptions).FirstOrDefault(s => s.Id == subId);
+            if (sub is null) return NotFound();
+            var modelVm = new SubscitpionFormVm()
+            {
+
+                SubscriperId = subId,
+            };
+
+            return PartialView("_subucripotionForm", modelVm);
+
+
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+
+        public IActionResult AddSubscription(SubscitpionFormVm model)
+        {
+            if (!ModelState.IsValid) return PartialView("_subucripotionForm", model);
+            var sub = context.Subscripers.Include(s => s.Subscriptions).FirstOrDefault(s => s.Id == model.SubscriperId);
+            if (sub is null) return NotFound();
+            var newSub = mapper.Map<Subscriptions>(model);
+            newSub.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            newSub.EndDate = newSub.StartDate.AddYears(1);
+            sub.Subscriptions.Add(newSub);
+            context.SaveChanges();
+
+            ///Send Email
+            var placeholders = new Dictionary<string, string>()
+                {
+                    { "[LogoUrl]", "https://res.cloudinary.com/dhtvvjlko/image/upload/v1784985004/logo_xxv8zk.png" },
+                    { "[HeroImageUrl]", "https://res.cloudinary.com/dhtvvjlko/image/upload/v1785683951/undraw_online-party_uybk_lpgvot.png" }, 
+                    { "[SubscriberName]", $"{sub.FirstName} {sub.LastName}" },
+                    { "[StartDate]", model.StartDate.ToString("dd MMM, yyyy") },
+                    { "[EndDate]", newSub.EndDate.ToString("dd MMM, yyyy") },
+                    { "[Year]", DateTime.Today.Year.ToString() }
+                };
+
+            var body = emailBodyBulider.GetBody(EmailTempletes.AddSubscription, placeholders); 
+
+            BackgroundJob.Enqueue(() => emailSender.SendEmailAsync(sub.Email, "🎉 Subscription Activated Successfully!", body));
+
+            var modelVm = mapper.Map<SubscriptionsVM>(newSub);
+            return PartialView("_SubscritpionRow", modelVm);
+        }
+
 
 
 
