@@ -1,0 +1,48 @@
+﻿@model AlertVM
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<!--begin::Card-->
+<div class="card card-flush shadow-sm">
+    <!--begin::Card body-->
+    <div class="card-body p-10 p-lg-15 text-center">
+        <!--begin::Alert Callout Metronic Style-->
+        <div class="alert alert-dismissible bg-light-danger border border-danger border-dashed d-flex flex-column flex-sm-row p-5 mb-10 text-start">
+            <!--begin::Icon-->
+            <span class="svg-icon svg-icon-2hx svg-icon-danger me-4 mb-5 mb-sm-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect opacity="0.3" x="2" y="2" width="20" height="20" rx="10" fill="currentColor" />
+                    <rect x="11" y="14" width="2" height="2" rx="1" fill="currentColor" />
+                    <rect x="11" y="6" width="2" height="6" rx="1" fill="currentColor" />
+                </svg>
+            </span>
+            <!--end::Icon-->
+            <!--begin::Wrapper-->
+            <div class="d-flex flex-column pe-0 pe-sm-10 align-self-center">
+                <!-- Dynamic Title -->
+                <h4 class="fw-bold text-danger mb-1">@Model.Title</h4>
+                <!-- Dynamic Message -->
+                <span class="text-gray-700 fs-6">@Model.ErrorMessage</span>
+            </div>
+            <!--end::Wrapper-->
+        </div>
+        <!--end::Alert Callout-->
+        <!--begin::Actions-->
+        <div class="text-center">
+            <a asp-controller="Subscripers" asp-action="Index" class="btn btn-sm btn-primary fw-bold">
+                <span class="svg-icon svg-icon-2 me-1">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.60001 11H21C21.6 11 22 11.4 22 12C22 12.6 21.6 13 21 13H9.60001V11Z" fill="currentColor" />
+                        <path opacity="0.3" d="M9.6 17V7L4.3 11.3C3.9 11.7 3.9 12.3 4.3 12.7L9.6 17Z" fill="currentColor" />
+                    </svg>
+                </span>
+                Back to Subscribers
+            </a>
+        </div>
+        <!--end::Actions-->
+    </div>
+    <!--end::Card body-->
+</div>
+<!--end::Card-->

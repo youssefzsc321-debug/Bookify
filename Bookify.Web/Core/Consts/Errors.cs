@@ -26,6 +26,10 @@
         public const string NotAllowedNationlaId = "Invalid Egyptian National ID.";
         public const string BookCopyNotFound = "Invalid Serail Number!";
         public const string BookCopyNotAvaliableForRental = "Not Avaliable for retnal!";
+        public const string BlockedSubscriber = "This Subscriber is blocked!";
+        public const string SubscriptionWillExpire = "Subscription will expire soon you must renew it!";
+        public const string ReachedToMax = "This subscriber reached to max number of rentals!";
+        public const string InAnotherRetnal = "This Book already in rental";
 
     }
 }
