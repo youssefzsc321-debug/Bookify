@@ -48,6 +48,9 @@ namespace Bookify.Web.Data
             builder.Entity<Area>().Property(e => e.GovernreteId).HasColumnName("GovernorateId");
             builder.Entity<RentalCopies>().HasKey(x => new { x.RentalId, x.BookCopyId });
 
+            builder.Entity<Rental>().HasQueryFilter(r => !r.IsDeleted);
+            builder.Entity<RentalCopies>().HasQueryFilter(r => !r.Rental!.IsDeleted);
+
           
 
         }

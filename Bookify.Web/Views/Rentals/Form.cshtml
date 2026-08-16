@@ -1,13 +1,18 @@
 ﻿@model RentalFormVM
 @{
-    ViewData["Title"] = "Add Rental";
+    ViewData["Title"] = $"{(Model.Id > 0 ? "Edit" : "Add")} Rental ";
+    
 }
 
 
 
 <!--begin::Card-->
 <div class="card mb-7">
+    <div class="card-header">
+        <h3 class="card-title">@(Model.Id>0?"Edit":"Add") Rental</h3>
+    </div>
     <partial name="_SearchForm" model="@new SearchFormVM()" />
+   
 
     <div class="card mb-5 mb-xl-8">
         <!--begin::Header-->
@@ -20,9 +25,15 @@
         <!--end::Header-->
         <!--begin::Body-->
         <div class="card-body pt-5">
-            <form asp-action="Create" id="CopiesForm">
+            <form asp-action=@(Model.Id > 0 ? "Edit" : "Create") id="CopiesForm">
                 <input type="hidden" asp-for="SubscriberId" />
-                @* Copies will be added here *@
+                @if (Model.BookCopies.Any())
+                {
+                    foreach (var item in Model.BookCopies)
+                    {
+                        <partial name="_copyDetails" model="@item" />
+                    }
+                }
                 <button type="submit" class="btn btn-primary d-none" id="SaveButton">
                     <span class="indicator-label">
                         Save
@@ -44,6 +55,7 @@
 @section Scripts{
     <script>
         var maxAllowedRental = @Model.AllowedRentals;
+        var isEdit =@(Model.Id>0?"true":"false");
     </script>
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/rentalFrom.js"></script>

@@ -132,7 +132,7 @@
                                     <i class="bi bi-book me-2"></i> Active Rentals
                                 </span>
                                 <div class="py-1">
-                                    <span class="text-dark fw-bold fs-2hx me-2">@Model.Rentals.Sum(s => s.TotalCopies)</span>
+                                    <span class="text-dark fw-bold fs-2hx me-2" data-total-copies="@Model.Rentals.Sum(s => s.TotalCopies)" id="TotalCopies">@Model.Rentals.Sum(s => s.TotalCopies)</span>
                                     <span class="fw-semibold text-muted fs-7">Books currently rented</span>
                                 </div>
                             </div>
@@ -226,73 +226,86 @@
                     </div>
 
                     <div class="card-body py-3">
-                        @if (Model.Rentals == null || !Model.Rentals.Any())
-                        {
-                            <div class="alert bg-light-info border border-info border-dashed d-flex align-items-center p-5 mb-10">
-                                <i class="bi bi-info-circle-fill fs-2x text-info me-4"></i>
-                                <div class="d-flex flex-column">
-                                    <h5 class="mb-1 text-info">No Rentals Found</h5>
-                                    <span>This subscriber hasn't made any rentals yet.</span>
-                                </div>
+                        <div class="alert bg-light-info border border-info border-dashed d-flex align-items-center p-5 mb-10" style="display:@(Model.Rentals.Any()?"none !important":"unset")" id="Alert">
+                            <i class="bi bi-info-circle-fill fs-2x text-info me-4"></i>
+                            <div class="d-flex flex-column">
+                                <h5 class="mb-1 text-info">No Rentals Found</h5>
+                                <span>This subscriber hasn't made any rentals yet.</span>
                             </div>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table align-middle gs-0 gy-4">
-                                    <thead>
-                                        <tr class="fw-bold text-muted bg-light">
-                                            <th class="ps-4 min-w-100px rounded-start">Rental #</th>
-                                            <th class="min-w-120px">Rental Date</th>
-                                            <th class="min-w-100px">Total Books</th>
-                                            <th class="min-w-120px">Delay Days</th>
-                                            <th class="min-w-100px text-end rounded-end pe-4">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var rental in Model.Rentals)
-                                        {
-                                            <tr>
-                                                <td class="ps-4">
-                                                    <span class="text-gray-800 fw-bold text-hover-primary mb-1 fs-6">
-                                                        #@rental.Id
+                        </div>
+
+
+                        <div class="table-responsive @(!Model.Rentals.Any()?"d-none":string.Empty)">
+                            <table class="table align-middle gs-0 gy-4 retnal-table">
+                                <thead>
+                                    <tr class="fw-bold text-muted bg-light">
+                                        <th class="ps-4 min-w-100px rounded-start">Rental #</th>
+                                        <th class="min-w-120px">Rental Date</th>
+                                        <th class="min-w-100px">Total Books</th>
+                                        <th class="min-w-120px">Delay Days</th>
+                                        <th class="min-w-100px text-end rounded-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var rental in Model.Rentals)
+                                    {
+                                        <tr>
+                                            <td class="ps-4">
+                                                <span class="text-gray-800 fw-bold text-hover-primary mb-1 fs-6">
+                                                    #@rental.Id
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="text-gray-600 fw-semibold fs-6">
+                                                    @rental.StartDate.ToString("dd MMM yyyy")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-light-primary fs-7 fw-bold" id="CopiesOfRentals" data-copies-rental="@rental.CountOfCopies">
+                                                    @rental.CountOfCopies Books
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (rental.TotalDelayDays > 0)
+                                                {
+                                                    <span class="badge badge-light-danger fs-7 fw-bold">
+                                                        @rental.TotalDelayDays Days Delay
                                                     </span>
-                                                </td>
-                                                <td>
-                                                    <span class="text-gray-600 fw-semibold fs-6">
-                                                        @rental.StartDate.ToString("dd MMM yyyy")
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-light-success fs-7 fw-bold">
+                                                        On Time
                                                     </span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge badge-light-primary fs-7 fw-bold">
-                                                        @rental.CountOfCopies Books
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    @if (rental.TotalDelayDays > 0)
+                                                }
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                                    @if (rental.CreatedOn == DateTime.Today)
                                                     {
-                                                        <span class="badge badge-light-danger fs-7 fw-bold">
-                                                            @rental.TotalDelayDays Days Delay
-                                                        </span>
+                                                        <a href="javascript:;"
+                                                           class="btn btn-sm btn-light-danger js-cancel-rental"
+                                                           data-id="@rental.Id">
+                                                            <i class="bi bi-x-circle-fill me-1"></i> Cancel
+                                                        </a>
+
                                                     }
-                                                    else
-                                                    {
-                                                        <span class="badge badge-light-success fs-7 fw-bold">
-                                                            On Time
-                                                        </span>
-                                                    }
-                                                </td>
-                                                <td class="text-end pe-4">
-                                                    <a asp-controller="Rentals" asp-action="Details" asp-route-id="@rental.Id" class="btn btn-sm btn-icon btn-bg-light btn-active-color-primary">
-                                                        <i class="bi bi-eye-fill fs-4"></i>
+
+
+                                                    <a asp-controller="Rentals" asp-action="Details" asp-route-id="@rental.Id" class="btn btn-sm btn-light-primary">
+                                                        <i class="bi bi-eye-fill me-1"></i> Details
                                                     </a>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
+
+
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
                     </div>
                 </div>
             </div>

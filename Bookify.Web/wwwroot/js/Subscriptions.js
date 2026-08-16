@@ -38,6 +38,7 @@ function OnAddSubsccriptionSuccess(rowHtml) {
 }
 
 $(document).ready(function () {
+  
     $('.js-reNew').on('click', function (e) {
         e.preventDefault();
 
@@ -123,6 +124,71 @@ $(document).ready(function () {
                         }).then(function () {
                             btn.removeClass('disabled').removeAttr('disabled');
                         });
+                    },
+                    error: function (xhr) {
+                        btn.removeClass('disabled').removeAttr('disabled');
+
+                        Swal.fire({
+                            text: xhr.responseText || "Something went wrong! Please try again.",
+                            icon: "error",
+                            buttonsStyling: false,
+                            confirmButtonText: "Ok",
+                            customClass: {
+                                confirmButton: "btn btn-primary"
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    $('.js-cancel-rental').on('click', function (e) {
+        e.preventDefault();
+
+        var btn = $(this);
+        var rentalId = btn.data('id');
+        var token = $('input[name="__RequestVerificationToken"]').val();
+
+        Swal.fire({
+            text: "Are you sure you want to cancel this rental?",
+            icon: "warning",
+            showCancelButton: true,
+            buttonsStyling: false,
+            confirmButtonText: "Yes, cancel it!",
+            cancelButtonText: "No, keep it",
+            customClass: {
+                confirmButton: "btn btn-danger",
+                cancelButton: "btn btn-active-light"
+            }
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                btn.addClass('disabled').attr('disabled', 'disabled');
+
+                $.ajax({
+                    url: '/Rentals/MarkeDeleted/' + rentalId,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token
+                    },
+                    success: function () {
+                        btn.parents('tr').remove();
+
+                        var total = parseInt($('#TotalCopies').data('total-copies')) || 0;
+                        var totalofOnRow = parseInt(btn.closest('tr').find('#CopiesOfRentals').data('copies-rental')) || 0;
+                        total = total - totalofOnRow
+
+                        $('#TotalCopies').text(total);
+                        $('#TotalCopies').data('total-copies', total);
+                        if ($('.retnal-table tbody tr').length === 0) {
+                            $('.retnal-table').fadeOut(function () {
+                                $('#Alert').fadeIn();
+                            });
+
+                        }
+
+                       
+                        
                     },
                     error: function (xhr) {
                         btn.removeClass('disabled').removeAttr('disabled');

@@ -145,11 +145,20 @@ namespace Bookify.Web
             RecurringJob.AddOrUpdate<HangfireTasks>(
                 recurringJobId: "send-expiration-alerts",
                 methodCall: task => task.PrepareExpirationAlert(),
-                cronExpression: Cron.Weekly(DayOfWeek.Wednesday, 16, 47), 
+                cronExpression: Cron.Daily(14, 0),
                 options: new RecurringJobOptions
                 {
                     TimeZone = egyptTimeZone
                 }
+            );
+            RecurringJob.AddOrUpdate<HangfireTasks>(
+               recurringJobId: "send-expiration-rentals",
+               methodCall: task => task.PrepareExpirationRentals(),
+               cronExpression: Cron.Daily(14, 0), 
+               options: new RecurringJobOptions
+               {
+                   TimeZone = egyptTimeZone
+               }
             );
 
 
