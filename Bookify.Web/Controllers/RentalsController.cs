@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Bookify.Web.Core.Consts;
 using Bookify.Web.Core.Models;
+using Bookify.Web.Core.ViewModel;
 using Bookify.Web.Enums;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq.Dynamic.Core;
 using System.Security.Claims;
 
 namespace Bookify.Web.Controllers
@@ -87,12 +89,12 @@ namespace Bookify.Web.Controllers
 
             foreach (var copy in copies)
             {
-                 var (Title,ErrorMessage)=ValidateCopies(copy, model, sub);
-                if(!string.IsNullOrEmpty(ErrorMessage))
+                var (Title, ErrorMessage) = ValidateCopies(copy, model, sub);
+                if (!string.IsNullOrEmpty(ErrorMessage))
                 {
                     var modelError = new AlertVM()
                     {
-                        Title= Title,
+                        Title = Title,
                         ErrorMessage = ErrorMessage,
                     };
                     return View("DeniedSubscription", modelError);
@@ -113,7 +115,7 @@ namespace Bookify.Web.Controllers
             };
             sub.Rentals.Add(newRental);
             _context.SaveChanges();
-            return RedirectToAction("Details", new { id =newRental.Id });
+            return RedirectToAction("Details", new { id = newRental.Id });
         }
 
 
@@ -255,7 +257,7 @@ namespace Bookify.Web.Controllers
             var reantlasCopies = new List<RentalCopies>();
             foreach (var copy in copies)
             {
-                var (Title, ErrorMessage) = ValidateCopies(copy, model, sub,model.Id);
+                var (Title, ErrorMessage) = ValidateCopies(copy, model, sub, model.Id);
                 if (!string.IsNullOrEmpty(ErrorMessage))
                 {
                     var modelError = new AlertVM()
@@ -284,6 +286,126 @@ namespace Bookify.Web.Controllers
 
 
         }
+
+        public IActionResult Return(int id)
+        {
+            var rental = _context.Rentals
+                .Include(r => r.RentalCopies)
+                .ThenInclude(c => c.BookCopy)
+                .ThenInclude(c => c.Book).SingleOrDefault(r => r.Id == id);
+            if (rental == null || rental.CreatedOn == DateTime.Today) return NotFound();
+            var sub = _context.Subscripers
+                .Include(s => s.Subscriptions).FirstOrDefault(s => s.Id == rental.SubscriperId);
+
+            return View(FillModel(rental, sub));
+
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Return(ReturnVM model)
+        {
+            var rental = _context.Rentals
+                .Include(r => r.RentalCopies)
+                .ThenInclude(c => c.BookCopy)
+                .ThenInclude(c => c.Book).SingleOrDefault(r => r.Id == model.RentalId);
+            if (rental == null || rental.CreatedOn == DateTime.Today) return NotFound();
+            var unreturnedCopies = rental.RentalCopies
+                        .Where(c => !c.ReturnDate.HasValue)
+                        .ToList();
+
+            var sub = _context.Subscripers
+                .Include(s => s.Subscriptions).FirstOrDefault(s => s.Id == rental.SubscriperId);
+
+
+            if (!ModelState.IsValid)
+                return View(FillModel(rental, sub, model));
+
+
+            if (model.SelectedCopies.Any(s => s.IsReturned.HasValue && !s.IsReturned.Value))
+            {
+                if (sub.BlacListed)
+                {
+                    ModelState.AddModelError("", Errors.ExtendDeinedForBlackList);
+                    return View(FillModel(rental, sub, model));
+                }
+                var AllowExtend = sub.Subscriptions.LastOrDefault().EndDate >= rental.StartDate.AddDays((int)RentalConfigurations.RentalDuration * 2)
+                                  && rental.StartDate.AddDays((int)RentalConfigurations.RentalDuration) >= DateTime.Today;
+                if (!AllowExtend)
+                {
+                    ModelState.AddModelError("", Errors.ExtendNotAllowedForThisUser);
+                    return View(FillModel(rental, sub, model));
+                }
+            }
+            var isUpdated = false;
+            foreach (var copy in model.SelectedCopies)
+            {
+                if (!copy.IsReturned.HasValue) continue;
+                var currentCopy = rental.RentalCopies.FirstOrDefault(r => r.BookCopyId == copy.CopyId);
+                if (currentCopy == null) continue;
+                if (copy.IsReturned.HasValue && copy.IsReturned.Value)
+                {
+                    if (currentCopy.ReturnDate.HasValue) continue;
+                    else
+                    {
+                        currentCopy.ReturnDate = DateTime.Today;
+                        isUpdated = true;
+                    }
+                }
+                if (copy.IsReturned.HasValue && !copy.IsReturned.Value)
+                {
+                    if (currentCopy.ExtendedOn.HasValue) continue;
+                    else
+                    {
+                        currentCopy.ExtendedOn = DateTime.Today;
+                        currentCopy.EndDate = currentCopy.RentalDate.AddDays((int)RentalConfigurations.RentalDuration * 2);
+                        isUpdated = true;
+                    }
+                }
+
+            }
+
+            if (isUpdated)
+            {
+                rental.LastUpdatedOn = DateTime.Now;
+                rental.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+                rental.PenaltyPay = model.PenaltyPaid;
+                _context.SaveChanges();
+            }
+
+
+            return RedirectToAction("Details", new { id = rental.Id });
+        }
+
+        public IActionResult GetCopyHistory(int id)
+        {
+            var copy = _context.BookCopies.Any(c => c.Id == id);
+            if (copy == null) return NotFound();
+            var copies = _context.RentalCopies.Where(r => r.BookCopyId == id).Include(r => r.Rental).ThenInclude(s => s.Subscriper).ToList();
+
+            var modelVm = new List<RentalHistoryVM>();
+
+            foreach (var c in copies)
+            {
+                var history = new RentalHistoryVM()
+                {
+                    BookCopyId = id,
+                    CreatedOn = c.Rental.CreatedOn,
+                    EndDate = c.EndDate,
+                    Extended = c.ExtendedOn.HasValue,
+                    RentalDate = c.RentalDate,
+                    ReturnDate = c.ReturnDate,
+                    SubscriberName = $"{c.Rental.Subscriper.FirstName} {c.Rental.Subscriper.LastName}",
+                    SubscriberPhone = c.Rental.Subscriper.MobileNumber,
+                    Delayed = (c.ReturnDate.HasValue && c.ReturnDate.Value.Date > c.EndDate)
+                    || (!c.ReturnDate.HasValue && c.EndDate.Date < DateTime.Today)
+                };
+                modelVm.Add(history);
+            }
+
+            return View(modelVm);
+        }
         private (string Title, string ErrorMessage, int? allowedRentals) validSubscriber(Subscriper sub, int? rentalId = null)
         {
 
@@ -303,21 +425,40 @@ namespace Bookify.Web.Controllers
             if (allowedRentals == 0) return ("Reach to max allowed Rentals!", Errors.ReachedToMax, allowedRentals);
             return (null, null, allowedRentals);
         }
-        private (string Title, string ErrorMessage) ValidateCopies(BookCopy copy, RentalFormVM model, Subscriper sub, int?retnalId=null)
+        private (string Title, string ErrorMessage) ValidateCopies(BookCopy copy, RentalFormVM model, Subscriper sub, int? retnalId = null)
         {
-            var isExist = copy.RentalCopies.Any(c => c.BookCopyId == copy.Id && !c.ReturnDate.HasValue&&(retnalId ==null ||c.RentalId!= retnalId));
+            var isExist = copy.RentalCopies.Any(c => c.BookCopyId == copy.Id && !c.ReturnDate.HasValue && (retnalId == null || c.RentalId != retnalId));
             if (isExist)
                 return ("Already in rental!", $"The{copy.Book.Title} book is already in another rentla!");
 
             if (!copy.IsAvailableForRental || copy.IsDeleted || copy.Book.IsDeleted || !copy.Book.IsAvailableForRental)
                 return ("Book is deleted", "This book is deleted!");
 
-            var copyisalreadyExist = sub.Rentals.Where(r => (retnalId==null|| r.Id!= retnalId)).SelectMany(r => r.RentalCopies).Any(c => c.BookCopyId == copy.Id && !c.ReturnDate.HasValue);
+            var copyisalreadyExist = sub.Rentals.Where(r => (retnalId == null || r.Id != retnalId)).SelectMany(r => r.RentalCopies).Any(c => c.BookCopyId == copy.Id && !c.ReturnDate.HasValue);
             if (copyisalreadyExist)
                 return ("Book is already exist", $"The {copy.Book.Title} is already with you!");
 
             return (null, null);
 
+        }
+
+        private ReturnVM FillModel(Rental rental, Subscriper sub, ReturnVM? model = null)
+        {
+            var modelVm = model is null ? new ReturnVM() : model;
+            modelVm.RentalId = rental.Id;
+            var unreturnedCopies = rental.RentalCopies
+                                .Where(c => !c.ReturnDate.HasValue)
+                                .ToList();
+
+            modelVm.copies = mapper.Map<IList<RentalCopiesVM>>(unreturnedCopies);
+            modelVm.SelectedCopies = unreturnedCopies
+                .Select(s => new ReturnCopyVM { CopyId = s.BookCopyId, IsReturned = s.ExtendedOn.HasValue ? false : null })
+                .ToList();
+            modelVm.AllowExtend = !sub.BlacListed
+             && sub.Subscriptions.LastOrDefault().EndDate >= rental.StartDate.AddDays((int)RentalConfigurations.RentalDuration * 2)
+             && rental.StartDate.AddDays((int)RentalConfigurations.RentalDuration) >= DateTime.Today;
+
+            return modelVm;
         }
 
 

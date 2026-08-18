@@ -1,0 +1,146 @@
+﻿@model IEnumerable<RentalHistoryVM>
+
+@{
+    ViewData["Title"] = "Rental History";
+}
+
+<div class="card card-flush shadow-sm">
+    <!-- Card Header -->
+    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+        <div class="card-title">
+            <div class="d-flex align-items-center position-relative my-1">
+                <i class="bi bi-clock-history fs-2x text-primary me-3"></i>
+                <div>
+                    <h3 class="fw-bold m-0">Rental History</h3>
+                    <span class="text-muted fs-7">Showing all rental activities for Book Copy #@(Model.FirstOrDefault()?.BookCopyId)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body pt-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-10">
+                <i class="bi bi-inbox fs-3x text-gray-400 d-block mb-3"></i>
+                <span class="fw-semibold text-gray-500 fs-6">No rental history recorded for this copy yet.</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle table-row-dashed fs-6 gy-4 mb-0">
+                    <thead>
+                        <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                            <th class="min-w-150px">Subscriber</th>
+                            <th class="min-w-125px">Created On</th>
+                            <th class="min-w-125px">Rental Date</th>
+                            <th class="min-w-125px">End Date</th>
+                            <th class="min-w-125px">Return Date</th>
+                            <th class="min-w-100px text-center">Extended</th>
+                            <th class="min-w-100px text-end">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="fw-semibold text-gray-600">
+                        @foreach (var item in Model)
+                        {
+                            var isReturned = item.ReturnDate.HasValue;
+
+                            <tr>
+                                <!-- Subscriber Details -->
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-gray-800 fw-bold fs-6 mb-1">
+                                            <i class="bi bi-person me-1 text-primary"></i>
+                                            @(string.IsNullOrWhiteSpace(item.SubscriberName) ? "N/A" : item.SubscriberName)
+                                        </span>
+                                        <span class="text-muted fs-7">
+                                            <i class="bi bi-telephone me-1"></i>
+                                            @(string.IsNullOrWhiteSpace(item.SubscriberPhone) ? "N/A" : item.SubscriberPhone)
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Created On -->
+                                <td>
+                                    <span class="text-gray-800">
+                                        <i class="bi bi-calendar-plus text-muted me-1"></i>
+                                        @(item.CreatedOn?.ToString("dd MMM yyyy") ?? "-")
+                                    </span>
+                                </td>
+
+                                <!-- Rental Date -->
+                                <td>
+                                    <span class="text-gray-800">
+                                        <i class="bi bi-calendar-check text-success me-1"></i>
+                                        @(item.RentalDate?.ToString("dd MMM yyyy") ?? "-")
+                                    </span>
+                                </td>
+
+                                <!-- End Date -->
+                                <td>
+                                    <span class="text-gray-800">
+                                        <i class="bi bi-calendar-x text-warning me-1"></i>
+                                        @(item.EndDate?.ToString("dd MMM yyyy") ?? "-")
+                                    </span>
+                                </td>
+
+                                <!-- Return Date -->
+                                <td>
+                                    @if (item.ReturnDate.HasValue)
+                                    {
+                                        <span class="badge badge-light-success fw-bold px-3 py-2">
+                                            <i class="bi bi-calendar2-check-fill text-success me-1"></i>
+                                            @item.ReturnDate.Value.ToString("dd MMM yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fs-7">-</span>
+                                    }
+                                </td>
+
+                                <!-- Extended Badge -->
+                                <td class="text-center">
+                                    @if (item.Extended)
+                                    {
+                                        <span class="badge badge-light-info fw-bold px-3 py-2">
+                                            <i class="bi bi-arrow-repeat text-info me-1"></i> Yes
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-light-secondary fw-bold px-3 py-2">No</span>
+                                    }
+                                </td>
+
+                                <!-- Status Badge based on Delayed property -->
+                                <td class="text-end">
+                                    @if (item.Delayed)
+                                    {
+                                        <span class="badge badge-light-danger fs-7 fw-bold px-3 py-2">
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Delayed
+                                        </span>
+                                    }
+                                    else if (isReturned)
+                                    {
+                                        <span class="badge badge-light-success fs-7 fw-bold px-3 py-2">
+                                            <i class="bi bi-check-circle-fill text-success me-1"></i> Returned
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-light-primary fs-7 fw-bold px-3 py-2">
+                                            <i class="bi bi-hourglass-split text-primary me-1"></i> Active
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

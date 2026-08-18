@@ -22,6 +22,14 @@
                 </a>
             </div>
         }
+        else if (Model.Copies.Any(c => !c.ReturnDate.HasValue))
+        {
+            <div id="RentalToolbar" class="card-toolbar">
+                <a asp-controller="Rentals" asp-action="Return" asp-route-id="@Model.Id" class="btn btn-sm btn-light-primary fw-bold">
+                    <i class="bi"></i> Return any book
+                </a>
+            </div>
+        }
 
     </div>
 

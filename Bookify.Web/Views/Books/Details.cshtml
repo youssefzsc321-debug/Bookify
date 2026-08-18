@@ -10,7 +10,6 @@
             <div class="d-flex flex-wrap flex-sm-nowrap mb-6">
                 <div class="d-flex flex-center flex-shrink-0 bg-light rounded w-100px h-100px w-lg-150px h-lg-150px me-7 mb-4">
                     <a data-fslightbox href="@(string.IsNullOrEmpty(Model.ImageUrl) ? Url.Content("~/Images/general-img-landscape.png") : Model.ImageUrl)" alt="@Model.Title">
-                       
                         <img class="mw-50px mw-lg-75px" src="@(string.IsNullOrEmpty(Model.imageThumbnailUrl) ? Url.Content("~/Images/general-img-landscape.png") : Model.imageThumbnailUrl)" alt="@Model.Title" />
                     </a>
                 </div>
@@ -37,7 +36,7 @@
                                 <div class="d-flex align-items-center">
                                     <span class="svg-icon svg-icon-success svg-icon-2 me-2">
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path opacity="0.3" d="M20 3H4C3.4 3 3 3.4 3 4V20C3 20.6 3.4 21 4 21H20C20.6 21 21 20.6 21 20V4C21 3.4 20.6 3H20Z" fill="currentColor" />
+                                            <path opacity="0.3" d="M20 3H4C3.4 3 3 3.4 3 4V20C3 20.6 3.4 21 4 21H20C20.6 21 21 20.6 21 20V4C21 3.4 20.6 3 20 3H12Z" fill="currentColor" />
                                             <path d="M12 3V21H20C20.6 21 21 20.6 21 20V4C21 3.4 20.6 3 20 3H12Z" fill="currentColor" />
                                         </svg>
                                     </span>
@@ -123,22 +122,19 @@
             </div>
         </div>
         <div id="Copies" class="card tab-pane fade">
-            <div class="card-header">
+            <div class="card-header border-0 pt-6">
                 <div class="card-title fs-3 fw-bold">Copies</div>
                 <div class="card-toolbar">
                     <a href="javascript:;" class="btn btn-sm btn-primary js-render-model"
                        data-title="Add Copy" data-url="/BookCopies/Create?bookId=@Model.Id">
-                        <i class="bi bi-plus-square-dotted"></i>
-                        Add
+                        <i class="bi bi-plus-square-dotted fs-3 me-1"></i>
+                        Add Copy
                     </a>
                 </div>
             </div>
 
-            <div class="card-body">
-                
+            <div class="card-body pt-0">
                 <div class="@(Model.BookCopies.Any() ? "d-none" : string.Empty) alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10 js-alert">
-                    <!--begin::Icon-->
-                    <!--begin::Svg Icon | path: icons/duotune/general/gen007.svg-->
                     <span class="svg-icon svg-icon-2hx svg-icon-warning me-4 mb-5 mb-sm-0">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <rect opacity="0.3" x="2" y="2" width="20" height="20" rx="10" fill="currentColor" />
@@ -146,37 +142,33 @@
                             <rect x="11" y="17" width="2" height="2" rx="1" transform="rotate(-90 11 17)" fill="currentColor" />
                         </svg>
                     </span>
-                    <!--end::Svg Icon-->
-                    <!--end::Icon-->
-                    <!--begin::Content-->
                     <div class="d-flex flex-column pe-0 pe-sm-10">
                         <h5 class="mb-1">No Copies</h5>
                         <span>No copies available for this book yet.</span>
                     </div>
-                    <!--end::Content-->
                 </div>
-                <table class="@(Model.BookCopies.Any() ? string.Empty : "d-none") table table-sm">
-                    <thead>
-                        <tr>
-                            <th scope="col">Serial Number</th>
-                            <th scope="col">Edition</th>
-                            <th scope="col">Rental</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Created On</th>
-                            <th scope="col text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var c in Model.BookCopies.OrderByDescending(b => b.Id))
-                        {
-                            <partial name="_BookCopyRow" model="@c" />
 
-                        }
-                    </tbody>
-                </table>
-
-
-
+                <div class="table-responsive">
+                    <table class="@(Model.BookCopies.Any() ? string.Empty : "d-none") table align-middle table-row-dashed fs-6 gy-5 gs-0">
+                        <thead>
+                            <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+                                <th class="min-w-125px">Serial Number</th>
+                                <th class="min-w-100px">Edition</th>
+                                <th class="min-w-100px">Rental</th>
+                                <th class="min-w-100px">Status</th>
+                                <th class="min-w-125px">Created On</th>
+                                <th class="min-w-125px">Rental History</th>
+                                <th class="text-end min-w-100px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="fw-semibold text-gray-600">
+                            @foreach (var c in Model.BookCopies.OrderByDescending(b => b.Id))
+                            {
+                                <partial name="_BookCopyRow" model="@c" />
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -192,37 +184,35 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         function OnAddCopySuccess(row) {
-          
             showSuccessMessage();
-            
+
             var modal = $('#Modal');
             modal.modal('hide');
-            
+
             $('tbody').prepend(row);
-            var oldcount = $('#crt'); 
-           
-            oldcount.text(newCount); 
-            
-            var oldcount = $('#crt'); 
-           
+
+            var oldcount = $('#crt');
             var newCount = parseInt(oldcount.text()) + 1;
             oldcount.text(newCount);
-            
 
-            
-            $('.js-alert').addClass('d-none')
-            $('table').removeClass('d-none')
+            $('.js-alert').addClass('d-none');
+            $('table').removeClass('d-none');
 
+            if (typeof KTMenu !== 'undefined') {
+                KTMenu.init();
+                KTMenu.initHandlers();
+            }
         };
 
         function OnEditCopySuccess(newRow) {
-
             showSuccessMessage();
             $('#Modal').modal('hide');
             $(updatedRow).replaceWith(newRow);
-            KTMenu.init();
-            KTMenu.initHandlers();
 
+            if (typeof KTMenu !== 'undefined') {
+                KTMenu.init();
+                KTMenu.initHandlers();
+            }
         }
     </script>
 }

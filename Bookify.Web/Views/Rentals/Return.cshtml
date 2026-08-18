@@ -1,0 +1,232 @@
+﻿@model ReturnVM
+
+@{
+     ViewData["Title"] = "Return / Extend Rental";
+}
+
+<div class="card card-xl-stretch mb-5 mb-xl-8 shadow-sm">
+    <!-- Header -->
+    <div class="card-header border-0 pt-5">
+        <h3 class="card-title align-items-start flex-column">
+            <span class="card-label fw-bold fs-3 mb-1 text-gray-900">
+                <i class="bi bi-arrow-return-left me-2 text-primary fs-2"></i>Return / Extend Rental
+            </span>
+            <span class="text-muted mt-1 fw-semibold fs-7">Select an action for each copy to return, extend, or keep as is</span>
+        </h3>
+        <div class="card-toolbar">
+            <a asp-controller="Rentals" asp-action="Details" asp-route-id="@Model.RentalId" class="btn btn-sm btn-light-secondary fw-bold me-2">
+                <i class="bi bi-arrow-left"></i> Back to Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body py-3">
+
+        @if (Model.copies == null || !Model.copies.Any())
+        {
+            <!-- Alert Empty State -->
+            <div class="alert bg-light-info border border-info border-dashed d-flex align-items-center p-5 my-5">
+                <i class="bi bi-info-circle-fill fs-2hx text-info me-4"></i>
+                <div class="d-flex flex-column">
+                    <h5 class="mb-1 text-info fw-bold">No Copies Available</h5>
+                    <span class="text-gray-700">There are no book copies found for this rental transaction.</span>
+                </div>
+            </div>
+        }
+        else
+        {
+    <form asp-controller="Rentals" asp-action="Return" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="RentalId" />
+        <input type="hidden" asp-for="TotalDelayDays" />
+
+
+        @if (Model.TotalDelayDays > 0)
+        {
+            <div class="card bg-light-warning border border-warning border-dashed p-4 mb-5">
+                <div class="form-check form-check-custom form-check-solid">
+                    <input class="form-check-input h-20px w-20px" type="checkbox" asp-for="PenaltyPaid" id="PenaltyPaidCheck" />
+                    <label class="form-check-label fw-bold text-gray-800 fs-6 ms-2" for="PenaltyPaidCheck">
+                        I confirm that the late penalty fees for <span class="text-danger">@Model.TotalDelayDays day(s)</span> have been collected.
+                    </label>
+                </div>
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table align-middle table-row-dashed fs-6 gy-4 retnal-table">
+                <thead>
+                    <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0 bg-light">
+                        <th class="ps-4 min-w-180px rounded-start">Book & Copy</th>
+                        <th class="min-w-120px">Rental Date</th>
+                        <th class="min-w-120px">End Date</th>
+                        <th class="min-w-120px">Return Date</th>
+                        <th class="min-w-100px">Delay Days</th>
+                        <th class="min-w-220px text-end rounded-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 fw-semibold">
+                    @for (int i = 0; i < Model.copies.Count; i++)
+                    {
+                        bool isReturned = Model.copies[i].ReturnDate.HasValue;
+
+                        <tr>
+                            <!-- Hidden Input Binding CopyId -->
+                            <input type="hidden" name="SelectedCopies[@i].CopyId" value="@Model.copies[i].BookCopy.Id" />
+
+                            <!-- Book Thumbnail, Title & Copy ID -->
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="symbol symbol-50px me-3">
+                                        @if (!string.IsNullOrEmpty(Model.copies[i].BookCopy.BookThumbnail))
+                                        {
+                                            <img src="@Model.copies[i].BookCopy.BookThumbnail" class="rounded" alt="@Model.copies[i].BookCopy.BookTilte" style="object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <span class="symbol-label bg-light-primary text-primary fw-bold fs-4">
+                                                <i class="bi bi-journal-bookmark-fill text-primary"></i>
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-gray-800 fw-bold fs-6 mb-1">
+                                            @(Model.copies[i].BookCopy.BookTilte ?? "Untitled Book")
+                                        </span>
+                                        <span class="badge badge-light-info text-info fs-8 fw-bold w-fit-content">
+                                            Copy ID: #@Model.copies[i].BookCopy.Id
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Rental Date -->
+                            <td>
+                                <span class="text-gray-800 fw-semibold fs-7">
+                                    <i class="bi bi-calendar-event me-1 text-muted"></i>
+                                    @Model.copies[i].RentalDate.ToString("dd MMM yyyy")
+                                </span>
+                            </td>
+
+                            <!-- End Date -->
+                            <td>
+                                <span class="text-gray-800 fw-semibold fs-7">
+                                    <i class="bi bi-calendar-x me-1 text-muted"></i>
+                                    @Model.copies[i].EndDate.ToString("dd MMM yyyy")
+                                </span>
+                            </td>
+
+                            <!-- Return Date / Status -->
+                            <td>
+                                @if (isReturned)
+                                {
+                                    <span class="text-gray-800 fw-semibold fs-7">
+                                        <i class="bi bi-calendar-check me-1 text-success"></i>
+                                        @Model.copies[i].ReturnDate?.ToString("dd MMM yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-light-warning fw-bold fs-8">Not Returned</span>
+                                }
+                            </td>
+
+                            <!-- Delay Days -->
+                            <td>
+                                @if (Model.copies[i].DelayDays > 0)
+                                {
+                                    <span class="badge badge-light-danger fs-7 fw-bold">
+                                        @Model.copies[i].DelayDays Days
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-light-success fs-7 fw-bold">On Time</span>
+                                }
+                            </td>
+
+                            <!-- Action Selection Column -->
+                            <td class="text-end pe-4">
+                                @if (isReturned)
+                                {
+                                    <span class="badge badge-light-success fw-bold px-3 py-2">
+                                        <i class="bi bi-check-circle-fill me-1 text-success"></i> Returned
+                                    </span>
+                                }
+                                else
+                                {
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <!-- Option 1: None (IsReturned = null) -->
+                                        <input type="radio"
+                                               class="btn-check"
+                                               name="SelectedCopies[@i].IsReturned"
+                                               id="action_none_@i"
+                                               value=""
+                                               checked="@(Model.SelectedCopies != null && i < Model.SelectedCopies.Count ? Model.SelectedCopies[i].IsReturned == null : true)" />
+                                        <label class="btn btn-outline btn-outline-dashed btn-active-light-secondary px-3 py-2" for="action_none_@i">
+                                            None
+                                        </label>
+
+                                        <!-- Option 2: Return (IsReturned = true) -->
+                                        <input type="radio"
+                                               class="btn-check"
+                                               name="SelectedCopies[@i].IsReturned"
+                                               id="action_return_@i"
+                                               value="true"
+                                               checked="@(Model.SelectedCopies != null && i < Model.SelectedCopies.Count && Model.SelectedCopies[i].IsReturned == true)" />
+                                        <label class="btn btn-outline btn-outline-dashed btn-active-light-primary px-3 py-2" for="action_return_@i">
+                                            <i class="bi bi-arrow-return-left"></i> Return
+                                        </label>
+
+                                        <!-- Option 3: Extend (IsReturned = false) -->
+                                        @if (Model.AllowExtend)
+                                        {
+                                            <input type="radio"
+                                                   class="btn-check"
+                                                   name="SelectedCopies[@i].IsReturned"
+                                                   id="action_extend_@i"
+                                                   value="false"
+                                                   checked="@(Model.SelectedCopies != null && i < Model.SelectedCopies.Count && Model.SelectedCopies[i].IsReturned == false)" />
+                                            <label class="btn btn-outline btn-outline-dashed btn-active-light-warning px-3 py-2" for="action_extend_@i">
+                                                <i class="bi bi-clock-history"></i> Extend
+                                            </label>
+                                        }
+                                    </div>
+
+                                    <!-- Display Field-Specific Validation Message -->
+                                    <span asp-validation-for="SelectedCopies[i].IsReturned" class="text-danger d-block fs-8 mt-1"></span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Form Footer Actions -->
+        <div class="d-flex justify-content-end pt-5 mb-3">
+            <a asp-controller="Rentals" asp-action="Details" asp-route-id="@Model.RentalId" class="btn btn-light me-3">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Process Changes
+            </button>
+        </div>
+
+        <!-- Validation Summary For Model Errors -->
+        <div asp-validation-summary="All" class="text-danger"></div>
+    </form>
+        }
+
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Check / Uncheck All Checkboxes
+            $('#selectAll').on('change', function () {
+                $('.copy-checkbox:not(:disabled)').prop('checked', this.checked);
+            });
+        });
+    </script>
+}
