@@ -49,6 +49,14 @@
     {
       "library": "fslightbox@3.7.4",
       "destination": "wwwroot/fslightbox/"
+    },
+    {
+      "library": "apexcharts@5.15.2",
+      "destination": "wwwroot/lib/apexcharts/",
+      "files": [
+        "apexcharts.min.js",
+        "apexcharts.min.css"
+      ]
     }
   ]
 }

@@ -33,6 +33,31 @@ table.table tbody tr {
     background-color: rgba(220, 53, 69, 0.18) !important;
 }
 
-    .table-danger-row td:first-child {
-        border-left: 4px solid #dc3545 !important;
-    }
+.table-danger-row td:first-child {
+    border-left: 4px solid #dc3545 !important;
+}
+
+.glass {
+    /* From https://css.glass */
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+
+.w-fit-content {
+    width: fit-content;
+}
+
+.custom-header {
+    font-family: 'Satisfy', cursive;
+}
+
+
+.custom-header {
+    font-family: 'Satisfy', cursive;
+}
+
