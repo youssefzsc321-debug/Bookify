@@ -1,0 +1,46 @@
+/* Typeahead Metronic Modern Dark Theme Fixes */
+.twitter-typeahead {
+    width: 100% !important;
+    position: relative !important;
+}
+
+    .twitter-typeahead .tt-input,
+    .twitter-typeahead .tt-hint {
+        width: 100% !important;
+        height: 50px !important;
+    }
+
+    .twitter-typeahead .tt-hint {
+        color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .twitter-typeahead .tt-menu {
+        width: 100% !important;
+        margin-top: 8px;
+        padding: 10px 0;
+        background-color: #1e1e2d !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 0.475rem !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+        z-index: 1050 !important;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .twitter-typeahead .tt-suggestion {
+        padding: 10px 16px !important;
+        cursor: pointer !important;
+        color: #cdcdde !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+        .twitter-typeahead .tt-suggestion:hover,
+        .twitter-typeahead .tt-suggestion.tt-cursor {
+            background-color: rgba(62, 151, 257, 0.15) !important;
+            color: #3e97ff !important;
+        }
+
+    .twitter-typeahead .tt-highlight {
+        color: #3e97ff !important;
+        font-weight: bold;
+    }

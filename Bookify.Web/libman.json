@@ -57,6 +57,20 @@
         "apexcharts.min.js",
         "apexcharts.min.css"
       ]
+    },
+    {
+      "library": "typeahead.js@0.11.1",
+      "destination": "wwwroot/lib/typeahead.js/",
+      "files": [
+        "typeahead.bundle.min.js"
+      ]
+    },
+    {
+      "library": "handlebars.js@4.7.9",
+      "destination": "wwwroot/lib/handlebars.js/",
+      "files": [
+        "handlebars.min.js"
+      ]
     }
   ]
 }

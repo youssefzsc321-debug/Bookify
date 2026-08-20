@@ -29,7 +29,8 @@
             </div>
             <!--end::Aside  toggle-->
             <!--begin::Logo-->
-            <a asp-controller="Home" asp-action="index">
+           
+            <a asp-controller="@(User.Identity.IsAuthenticated?"Dashboard":"Home")" asp-action="index">
                 <img alt="Logo" src="~/assets/images/logo.png" class="h-40px h-lg-50px" />
             </a>
             <!--end::Logo-->

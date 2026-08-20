@@ -30,7 +30,8 @@ namespace Bookify.Web.Core.Mapping
 
             CreateMap<Book, BookDetailsVM>()
                 .ForMember(dest => dest.AuthorsName, opt => opt.MapFrom(opt => opt.Author.Name))
-                .ForMember(dest => dest.Categories, opt => opt.MapFrom(opt => opt.Categories.Select(c => c.Category.Name).ToList()));
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(opt => opt.Categories.Select(c => c.Category.Name).ToList()))
+                ;
 
             CreateMap<BookCopy, BookCopyVM>()
                 .ForMember(dest => dest.BookTilte, opt => opt.MapFrom(opt => opt.Book.Title))

@@ -1,8 +1,102 @@
-﻿@{
+﻿@model IEnumerable<BookDetailsVM>
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="d-flex flex-column flex-root page-bg min-vh-100">
+    <!--begin::Page-->
+    <div class="page launcher sidebar-enabled d-flex flex-row flex-column-fluid" id="kt_page">
+
+        <div class="d-flex flex-column justify-content-center align-items-center main-content-wrapper my-auto py-10">
+
+            <!--begin::Brand (Logo)-->
+            <div class="d-flex flex-center mb-8">
+                <div class="btn btn-icon btn-active-color-primary w-30px h-30px d-lg-none me-4" id="kt_sidebar_toggle">
+                    <span class="svg-icon svg-icon-1">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z" fill="currentColor" />
+                            <path opacity="0.3" d="M21 14H3C2.4 14 2 13.6 2 13V11C2 10.4 2.4 10 3 10H21C21.6 10 22 10.4 22 11V13C22 13.6 21.6 14 21 14ZM22 20V18C22 17.4 21.6 17 21 17H3C2.4 17 2 17.4 2 18V20C2 20.6 2.4 21 3 21H21C21.6 21 22 20.6 22 20Z" fill="currentColor" />
+                        </svg>
+                    </span>
+                </div>
+                <a href="/">
+                    <img alt="Logo" src="~/assets/images/logo.png" class="h-70px" />
+                </a>
+            </div>
+            <!--end::Brand-->
+            <!--begin::Cards Row-->
+            <div class="row g-7 w-100 mw-850px justify-content-center px-5">
+                <!--begin::Col - Staff-->
+                <div class="col-12 col-md-6 col-xxl-5">
+                    <div class="card border-0 shadow-none mh-450px h-100" style="background-color: #A838FF">
+                        <div class="card-body d-flex flex-column flex-center pb-0 pt-10">
+                            <div class="px-5 mb-5 text-center">
+                                <h3 class="text-white fw-bolder text-uppercase mb-6">Bookify Staff</h3>
+                                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-hover-rise text-white bg-white bg-opacity-10 text-uppercase fs-7 fw-bold">Go To Dashboard</a>
+                            </div>
+                            <img class="mw-100 h-225px mx-auto mt-auto" src="~/assets/images/staff.png" />
+                        </div>
+                    </div>
+                </div>
+                <!--end::Col-->
+                <!--begin::Col - Search-->
+                <div class="col-12 col-md-6 col-xxl-5">
+                    <div class="card border-0 shadow-none bg-primary mh-450px h-100">
+                        <div class="card-body d-flex flex-column flex-center pb-0 pt-10">
+                            <div class="px-5 mb-5 text-center">
+                                <h3 class="text-white fw-bolder text-uppercase mb-6">Find a book</h3>
+                                <a asp-controller="Search" asp-action="Index" class="btn btn-hover-rise text-white bg-white bg-opacity-10 text-uppercase fs-7 fw-bold">Go To Books Finder</a>
+                            </div>
+                            <img class="mw-100 h-225px mx-auto mt-auto" src="~/assets/images/search.png" />
+                        </div>
+                    </div>
+                </div>
+                <!--end::Col-->
+            </div>
+            <!--end::Cards Row-->
+
+        </div>
+        <!--end::Content-->
+        <div id="kt_sidebar" class="sidebar flex-shrink-0 p-6"
+             data-kt-drawer="true"
+             data-kt-drawer-name="sidebar"
+             data-kt-drawer-activate="{default: true, lg: false}"
+             data-kt-drawer-overlay="true"
+             data-kt-drawer-width="375px"
+             data-kt-drawer-direction="end"
+             data-kt-drawer-toggle="#kt_sidebar_toggle">
+
+            <!--begin::Header-->
+            <div class="d-flex flex-stack mb-5" id="kt_sidebar_header">
+                <h2 class="text-white fs-3 fw-bold m-0">Newly Added Books</h2>
+            </div>
+            <!--end::Header-->
+            <!--begin::Body-->
+            <div class="mb-5" id="kt_sidebar_body">
+                <div class="hover-scroll-y pe-2" data-kt-scroll="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_sidebar_header" data-kt-scroll-wrappers="#kt_sidebar_body" data-kt-scroll-offset="20px">
+                    @foreach (var book in Model)
+                    {
+                        <a asp-controller="Search" asp-action="Details" asp-route-Key="@book.key" class="d-flex align-items-center py-3 text-decoration-none btn-hover-rise rounded px-2">
+                            <div class="symbol symbol-50px me-4 flex-shrink-0">
+                                <img src="@book.imageThumbnailUrl" class="rounded" alt="@book.Title" />
+                            </div>
+                            <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                <h5 class="text-white text-hover-primary fs-6 fw-bold text-truncate mb-1">@book.Title</h5>
+                                <span class="text-warning fw-semibold d-block fs-6">@book.AuthorsName</span>
+                            </div>
+                        </a>
+
+                        @if (book != Model.Last())
+                        {
+                            <div class="separator separator-dashed border-gray-700 my-2"></div>
+                        }
+                    }
+                </div>
+            </div>
+            <!--end::Body-->
+        </div>
+        <!--end::Sidebar-->
+
+    </div>
+    <!--end::Page-->
 </div>

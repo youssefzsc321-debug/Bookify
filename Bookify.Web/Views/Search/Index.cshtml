@@ -1,0 +1,81 @@
+﻿@{
+    ViewData["Title"] = "Find a Book";
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+}
+
+@section Styles {
+    <link href="~/css/typeahead.css" rel="stylesheet" />
+}
+
+<div class="@(isAuthenticated ? "py-10" : "d-flex flex-column flex-center min-vh-100 position-relative bgi-no-repeat bgi-position-center bgi-size-cover rounded-3 overflow-hidden py-10")"
+     style="@(isAuthenticated ? "" : $"background-image: url('{Url.Content("~/assets/images/bg-search.png")}');")">
+
+    <div class="card card-flush w-lg-850px mx-auto shadow-lg border border-secondary border-opacity-10 my-5 position-relative z-index-2 bg-body bg-opacity-75 backdrop-blur">
+        <div class="card-body p-8 p-lg-12">
+            <div class="row align-items-center g-8">
+                <div class="col-md-5 text-center">
+                    <img src="~/assets/images/search-dark.png" class="mw-100 mh-200px mh-lg-275px img-fluid" alt="Find a Book" />
+                </div>
+
+                <div class="col-md-7">
+                    <div class="mb-6">
+                        <span class="badge badge-light-primary fw-bold px-3 py-2 mb-3 fs-8">BOOK FINDER</span>
+                        <h2 class="text-gray-900 fw-bolder fs-2hx mb-2">Discover Your Next Read</h2>
+                        <p class="text-gray-500 fw-semibold fs-6 mb-0">
+                            Search seamlessly across our library by entering the <span class="text-gray-800 fw-bold">Title</span> or <span class="text-gray-800 fw-bold">Author</span> name.
+                        </p>
+                    </div>
+
+                    <form id="SearchForm">
+                        <div class="position-relative mb-4">
+                            <span class="svg-icon svg-icon-2 svg-icon-gray-500 position-absolute top-50 translate-middle-y ms-4 z-index-3">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect opacity="0.5" x="17.0365" y="15.1223" width="8.15546" height="2" rx="1" transform="rotate(45 17.0365 15.1223)" fill="currentColor" />
+                                    <path d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.66667 5 5 7.66667 5 11C5 14.3333 7.66667 17 11 17C14.3333 17 17 14.3333 17 11C17 7.66667 14.3333 5 11 5Z" fill="currentColor" />
+                                </svg>
+                            </span>
+
+                            <input id="Search" type="text" name="query" class="form-control form-control-solid ps-13 pe-5 h-50px fs-6 text-gray-800" placeholder="Type book title or author..." required autocomplete="off" />
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2">
+                            <div></div>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-link btn-color-primary fs-7 p-0 fw-bold">
+                                Back to Home
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="SearchResultsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content rounded">
+            <div class="modal-header pb-0 border-0 justify-content-end">
+                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                    <span class="svg-icon svg-icon-1">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="currentColor" />
+                            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="currentColor" />
+                        </svg>
+                    </span>
+                </div>
+            </div>
+            <div class="modal-body scroll-y px-10 px-lg-15 pt-0 pb-15" id="ModalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Plugins {
+    <script src="~/lib/handlebars.js/handlebars.min.js"></script>
+    <script src="~/lib/typeahead.js/typeahead.bundle.min.js"></script>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/SearchModule.js" asp-append-version="true"></script>
+}

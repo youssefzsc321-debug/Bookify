@@ -5,7 +5,7 @@ namespace Bookify.Web.Core.ViewModel
     public class BookDetailsVM
     {
         public int Id { get; set; }
-        
+        public string? key {  get; set; }
         public string Title { get; set; }
         public string  AuthorsName { get; set; }
 
